@@ -1,0 +1,11 @@
+/* Import the Registry */
+import NodeRegistry from '../../lib/node-registry';
+
+/* Import the Nodes */
+import { LLMPromptNode } from './llm-prompt.node';
+
+
+export function RegisterNodes() {
+  console.info('Registering Nodes');
+  NodeRegistry.register('llm-prompt', LLMPromptNode);
+}
