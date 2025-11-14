@@ -120,6 +120,12 @@
 
     border-radius: 0.5rem;
 
-    width: 40ch;
+    width: 70ch;
+  }
+
+  .selected {
+    .node {
+      @apply outline-2 outline-blue-700;
+    }
   }
 }

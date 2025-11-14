@@ -1,3 +1,4 @@
+// Documentation: https://crates.io/crates/ollama-rs
 use ollama_rs::Ollama;
 use ollama_rs::generation::chat::ChatMessage as OllamaChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;

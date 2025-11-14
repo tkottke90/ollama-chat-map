@@ -69,52 +69,6 @@ export function useMindMapState(
 
   const { screenToFlowPosition } = useReactFlow();
 
-  // Listen for state updates from Tauri backend
-  // useEffect(() => {
-  //   const unlisten = listen<MindMap>('state-updated', (event) => {
-  //     console.log('Mind map state updated from backend:', event.payload);
-  //     setMindMap(event.payload);
-  //   });
-
-  //   // Load initial state from backend
-  //   invoke<MindMap | null>('get_mind_map')
-  //     .then((loadedMap) => {
-  //       if (loadedMap) {
-  //         setMindMap(loadedMap);
-  //       } else {
-  //         // Create a new mind map with initial nodes/edges
-  //         const newMap: MindMap = {
-  //           id: 0,
-  //           name: 'Untitled',
-  //           description: 'No description',
-  //           nodes: initialNodes,
-  //           edges: initialEdges,
-  //           created_at: new Date().toISOString(),
-  //           updated_at: new Date().toISOString(),
-  //         };
-
-  //         // Initialize backend state with the new mind map
-  //         invoke('load_mind_map', { mindMap: newMap })
-  //           .then(() => {
-  //             console.log('Backend state initialized with new mind map');
-  //             setMindMap(newMap);
-  //           })
-  //           .catch((error) => {
-  //             console.error('Failed to initialize backend state:', error);
-  //             // Still set local state even if backend fails
-  //             setMindMap(newMap);
-  //           });
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error('Failed to load mind map:', error);
-  //     });
-
-  //   // Cleanup listener on unmount
-  //   return () => {
-  //     unlisten.then(fn => fn());
-  //   };
-  // }, []);
 
   const onNodesChange = useCallback(
     (changes: NodeChange<Node>[]) => {
