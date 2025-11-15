@@ -4,8 +4,8 @@ import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { BaseProps } from "@/lib/utility-types";
 import { invoke } from "@tauri-apps/api/core";
 import { Handle, Node, Position, useReactFlow } from "@xyflow/react";
-import { Code2, Pencil } from "lucide-preact";
-import { useState } from "preact/hooks";
+import { Code2, Pencil, SendHorizonal } from "lucide-preact";
+import { useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,7 +22,7 @@ const onConnect = (params: unknown) => console.log("handle onConnect", params);
  * @param input
  * @returns
  */
-export function LlmPromptNodeDefinition(input: NodeDefinitionInput<LLMNodeProps>): LLMNodeProps {
+export function LlmPromptNodeDefinition(input: NodeDefinitionInput<ChatNodeData>): LLMNodeProps {
   return {
     id: crypto.randomUUID(),
     type: "llm-prompt",
@@ -33,13 +33,45 @@ export function LlmPromptNodeDefinition(input: NodeDefinitionInput<LLMNodeProps>
   };
 }
 
-function UserMessage({ locked, message, onKeyDown }: { locked: boolean; message: string; onKeyDown: (e: KeyboardEvent) => void }) {
+function UserMessage({ locked, message, onSubmit }: { locked: boolean; message: string; onSubmit: (value: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  
   if (!locked) {
-    return (<textarea disabled={locked} id="text" name="text" onKeyDown={onKeyDown} defaultValue={message} className="nodrag w-full rounded-md" />);
+    return (
+      <div className="flex gap-2">
+        <textarea
+          ref={ref}
+          disabled={locked}
+          id="text"
+          name="text"
+          onKeyDown={EnterHandler(async (evt) => {
+            if (!evt.currentTarget) return;
+
+            const userInput = (evt.currentTarget as HTMLTextAreaElement).value ?? "";
+            
+            onSubmit(userInput);
+          })}
+          defaultValue={message}
+          className="nodrag noscroll w-full rounded-md grow"
+        />
+        <button
+          className="cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex items-center justify-center px-4 max-h-16"
+          onClick={() => {
+            if (ref.current?.value) {
+              onSubmit(ref.current?.value);
+            }
+          }}
+        >
+          <SendHorizonal width={16} />
+        </button>
+      </div>
+    );
   }
 
   return (
-    <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+    <div className="prose orderList unorderList list">
+      <Markdown>{message}</Markdown>
+    </div>
   )
 }
 
@@ -56,7 +88,9 @@ function AssistantResponse({ message }: BaseProps<{ message?: string }>) {
     <Fragment>
       <h4 className="font-bold">Assistant:</h4>
 
-      <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+      <div className="prose orderList unorderList list">
+        <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+      </div>
     </Fragment>
   );
 }
@@ -72,7 +106,7 @@ export function LLMPromptNode(props: LLMNodeProps) {
       <div className="node--text-input flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <label htmlFor="text" className="font-bold text-lg">
-            Prompt:
+            Message:
           </label>
           <div className="flex w-fit justify-end gap-4">
             <button
@@ -107,15 +141,10 @@ export function LLMPromptNode(props: LLMNodeProps) {
         <UserMessage
           locked={props.data.locked}
           message={props.data.userMessage?.content ?? ""}
-          onKeyDown={EnterHandler(async (evt) => {
-            const userInput = evt.currentTarget?.value ?? "";
-
-            // Exit early if the input is empty
-            if (!userInput) return;
-
+          onSubmit ={async (value: string) => {
             const currentState = ChatNodeData.toChatNodeData(props.data);
 
-            const nextState = currentState.addUserMessage(userInput);
+            const nextState = currentState.addUserMessage(value);
 
             try {
               // Step 1: Disable the input and show loading
@@ -133,12 +162,13 @@ export function LLMPromptNode(props: LLMNodeProps) {
               });
 
               updateNodeData(props.id, nextState.addAIMessage(response), { replace: true });
+            } catch (error) {
               console.error("AI error:", error);
               updateNodeData(props.id, nextState.editUserMessage(), { replace: true });
             } finally {
               setLoading(false);
             }
-          })}
+          }}
         />
 
         {loading || (props.data.aiResponse?.content && <hr />)}

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -108,9 +109,29 @@
     outline: none;
     border: none;
   }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  ul {
+    @apply list-disc;
+  }
 }
 
 @layer components {
+
+  .orderList ol {
+    @apply list-decimal;
+  }
+
+  .unorderList ul {
+    @apply list-disc;
+  }
+
+  .list li::marker{
+    color: #0072e6;
+  }
 
   .react-flow__node-default,
   .node {
@@ -121,6 +142,16 @@
     border-radius: 0.5rem;
 
     width: 70ch;
+  }
+
+  .react-flow__handle {
+    --size: 0.75rem;
+    --xy-handle-background-color: #efefef;
+
+    width: var(--size);
+    height: var(--size);
+
+    @apply bg-gray-100 border border-gray-600 rounded-full;
   }
 
   .selected {

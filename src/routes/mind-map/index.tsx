@@ -10,7 +10,7 @@ import {
   ReactFlow,
   ReactFlowProvider
 } from "@xyflow/react";
-import '@xyflow/react/dist/style.css';
+import '@xyflow/react/dist/base.css';
 import { useMindMapState } from "./state";
 
 type MindMapProps = BaseProps
@@ -26,19 +26,9 @@ const initialNodes: Node[] = [
     data: {
       userMessage: { role: 'user', content: 'Hello, my name is Thomas.  I am a software engineer.  You are my assistant.' }
     }
-  }),
-  LlmPromptNodeDefinition({
-    id: 'demo2',
-    position: { x: 200, y: 200 }
   })
 ];
-const initialEdges: Edge[] = [
-  {
-    id: 'd1-2',
-    source: 'demo1',
-    target: 'demo2'
-  }
-];
+const initialEdges: Edge[] = [];
 
 function ReactFlowCanvas() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd } = useMindMapState(
@@ -60,7 +50,7 @@ function ReactFlowCanvas() {
       onConnectEnd={onConnectEnd}
     >
       <Background />
-      <Controls />
+      <Controls style={{ backgroundColor: '#efefef', padding: '0.25rem', borderRadius: '0.25rem'  }} />
     </ReactFlow>
   )
 }
