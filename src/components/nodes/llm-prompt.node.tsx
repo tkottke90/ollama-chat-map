@@ -38,7 +38,7 @@ function UserMessage({ locked, message, onSubmit }: { locked: boolean; message: 
   
   if (!locked) {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 nodrag">
         <textarea
           ref={ref}
           disabled={locked}
@@ -69,7 +69,7 @@ function UserMessage({ locked, message, onSubmit }: { locked: boolean; message: 
   }
 
   return (
-    <div className="prose orderList unorderList list">
+    <div className="nodrag prose orderList unorderList list">
       <Markdown>{message}</Markdown>
     </div>
   )
@@ -86,9 +86,9 @@ function AssistantResponse({ message }: BaseProps<{ message?: string }>) {
 
   return (
     <Fragment>
-      <h4 className="font-bold">Assistant:</h4>
+      <h4 className="nodrag font-bold">Assistant:</h4>
 
-      <div className="prose orderList unorderList list">
+      <div className="nodrag prose orderList unorderList list">
         <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
       </div>
     </Fragment>
@@ -105,13 +105,13 @@ export function LLMPromptNode(props: LLMNodeProps) {
       <Handle type="source" position={Position.Bottom} onConnect={onConnect} />
       <div className="node--text-input flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <label htmlFor="text" className="font-bold text-lg">
+          <label htmlFor="text" className="font-bold text-lg nodrag">
             Message:
           </label>
           <div className="flex w-fit justify-end gap-4">
             <button
               disabled={!props.data.locked}
-              className="rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-default"
+              className="nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-default"
               onClick={() => {
                 const currentState = ChatNodeData.toChatNodeData(props.data);
                 const nextState = currentState.editUserMessage();
@@ -123,7 +123,7 @@ export function LLMPromptNode(props: LLMNodeProps) {
             </button>
 
             <button
-              className={`rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer ${props.data.showDebug ? "bg-blue-500 hover:bg-blue:600" : ""}`}
+              className={`nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer ${props.data.showDebug ? "bg-blue-500 hover:bg-blue:600" : ""}`}
               onClick={() => {
                 const currentState = ChatNodeData.toChatNodeData(props.data);
                 const nextState = currentState.set("showDebug", !currentState.showDebug);

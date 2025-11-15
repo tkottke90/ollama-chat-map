@@ -1,5 +1,5 @@
 {
-  "name": "taui-preact-template",
+  "name": "@tkottke90/ollama-chat-map",
   "private": true,
   "version": "0.1.0",
   "type": "module",
