@@ -1,10 +1,15 @@
+import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { MindMap } from "@/lib/types/mind-map";
-import { applyEdgeChanges, applyNodeChanges, Edge, EdgeChange, Node, NodeChange, useReactFlow } from "@xyflow/react";
+import { addEdge, applyEdgeChanges, applyNodeChanges, Connection, Edge, EdgeChange, Node, NodeChange, useReactFlow } from "@xyflow/react";
 import { useCallback, useState } from "preact/hooks";
+
+export type AddNodeFn = (input: NodeDefinitionInput<any>) => Node;
+export type AddNodeFactory = (factory: AddNodeFn) => void;
 
 function addToMindMap(mindMap: MindMap | null, additions: {
   nodes?: Node[],
-  edges?: Edge[]
+  edges?: Edge[],
+  connection?: Connection
 }) {
   if (!mindMap) return null;
 
@@ -14,11 +19,15 @@ function addToMindMap(mindMap: MindMap | null, additions: {
   }
 
   if (additions.nodes) {
-    updatedMap.nodes = mindMap.nodes.concat(additions.nodes)
+    updatedMap.nodes = mindMap.nodes.concat(additions.nodes);
   }
 
   if (additions.edges) {
-    updatedMap.edges = mindMap.edges.concat(additions.edges)
+    updatedMap.edges = mindMap.edges.concat(additions.edges);
+  }
+
+  if (additions.connection) {
+    updatedMap.edges = addEdge(additions.connection, mindMap.edges);
   }
 
   return updatedMap;
@@ -55,8 +64,6 @@ export function useMindMapState(
   initialNodes: Node[] =  [],
   initialEdges: Edge[] = []
 ) {
-  const [ abort, setAbort ] = useState<AbortController | null>(null)
-
   const [mindMap, setMindMap] = useState<MindMap | null>({
     id: 1,
     name: 'Untitled',
@@ -67,7 +74,7 @@ export function useMindMapState(
     updated_at: new Date().toISOString(),
   });
 
-  const { screenToFlowPosition } = useReactFlow();
+  const { getNodes } = useReactFlow();
 
 
   const onNodesChange = useCallback(
@@ -91,44 +98,53 @@ export function useMindMapState(
   );
 
   const onConnect = useCallback(
-    (params: any) => {
+    (connection: Connection) => {
       setMindMap((prevMap) => {
-        return updateMindMapNodes(prevMap, { edges: params })
+        return addToMindMap(prevMap, { connection })
       });
     },
     [],
   );
 
-  const onConnectStart = useCallback(() => {
-    setAbort(new AbortController());
-  }, [abort]);
+  const onAddNode = useCallback((nodeFactory: AddNodeFn) => {
+    // Get the position of the last node
+    const nodes = getNodes();
+    const lastNode = nodes.at(-1);
 
-  const onConnectEnd = useCallback((event, connectionState) => {
-      // when a connection is dropped on the pane it's not valid
-      if (!connectionState.isValid) {
-        // we need to remove the wrapper bounds, in order to get the correct position
-        const id = crypto.randomUUID();
-        const { clientX, clientY } =
-          'changedTouches' in event ? event.changedTouches[0] : event;
-        const newNode: Node = {
-          id,
-          position: screenToFlowPosition({
-            x: clientX,
-            y: clientY,
-          }),
-          type: 'llm-prompt',
-          data: { locked: false },
-          origin: [0.5, 0.0],
-        };
+    // Create next node position 100 below the last node
+    const pos = {
+      x: lastNode?.position.x ?? 0,
+      y: (lastNode?.position.y ?? 0) + (lastNode?.measured?.height ?? 0) + 50
+    }
 
-        setMindMap((prevMap) => {
-          return addToMindMap(prevMap, { 
-            nodes: [newNode],
-            edges: [{ id, source: connectionState.fromNode.id, target: id }]
-          })
-        });
-      }
-    }, [abort]);
+    // Create new node
+    const newNode = nodeFactory({ showDebug: false, position: pos })
+
+    // Check if we have a selectedNode
+    const selected = getNodes();
+
+    console.dir(selected)
+
+    // Create edges
+    const edges: Edge[] = selected
+      .filter(node => 
+        // Find nodes that are selected
+        node.selected
+      ).map(node => ({
+        id: crypto.randomUUID(),
+        source: node.id,
+        target: newNode.id
+      }))
+
+    console.dir(selected);
+
+    setMindMap((prevMap) => {
+      return addToMindMap(prevMap, {
+        nodes: [newNode],
+        edges
+      })
+    })
+  }, []);
 
   return {
     nodes: mindMap?.nodes ?? [],
@@ -137,7 +153,6 @@ export function useMindMapState(
     onNodesChange,
     onEdgesChange,
     onConnect,
-    onConnectStart,
-    onConnectEnd
+    onAddNode
   }
 }

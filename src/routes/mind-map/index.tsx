@@ -11,6 +11,7 @@ import {
   ReactFlowProvider
 } from "@xyflow/react";
 import '@xyflow/react/dist/base.css';
+import { ActionsToolbar } from "./action-toolbar";
 import { useMindMapState } from "./state";
 
 type MindMapProps = BaseProps
@@ -31,7 +32,7 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 function ReactFlowCanvas() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd } = useMindMapState(
+  const { nodes, edges, onAddNode, onNodesChange, onEdgesChange, onConnect } = useMindMapState(
     initialNodes,
     initialEdges
   );
@@ -46,11 +47,10 @@ function ReactFlowCanvas() {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      onConnectStart={onConnectStart}
-      onConnectEnd={onConnectEnd}
     >
       <Background />
       <Controls style={{ backgroundColor: '#efefef', padding: '0.25rem', borderRadius: '0.25rem'  }} />
+      <ActionsToolbar addNode={onAddNode} />
     </ReactFlow>
   )
 }

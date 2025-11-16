@@ -1,9 +1,12 @@
 
-import { RenderableProps } from 'preact'
+import { RenderableProps } from 'preact';
+import { BaseNodeData } from './models/base-node.data';
 
 type ComponentProps = Record<string, unknown> & {
   className?: string
 }
+
+export type Constructor<T = BaseNodeData> = new (data?: Partial<T>) => T;
 
 export type BaseProps<
  TProps extends ComponentProps = ComponentProps, 

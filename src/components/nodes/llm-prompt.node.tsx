@@ -4,7 +4,7 @@ import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { BaseProps } from "@/lib/utility-types";
 import { invoke } from "@tauri-apps/api/core";
 import { Handle, Node, Position, useReactFlow } from "@xyflow/react";
-import { Code2, Pencil, SendHorizonal } from "lucide-preact";
+import { Code2, MessageSquareText, Pencil, SendHorizonal } from "lucide-preact";
 import { useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import Markdown from "react-markdown";
@@ -52,7 +52,7 @@ function UserMessage({ locked, message, onSubmit }: { locked: boolean; message: 
             onSubmit(userInput);
           })}
           defaultValue={message}
-          className="nodrag noscroll w-full rounded-md grow"
+          className="nodrag noscroll nowheel w-full rounded-md grow"
         />
         <button
           className="cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex items-center justify-center px-4 max-h-16"
@@ -105,8 +105,9 @@ export function LLMPromptNode(props: LLMNodeProps) {
       <Handle type="source" position={Position.Bottom} onConnect={onConnect} />
       <div className="node--text-input flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <label htmlFor="text" className="font-bold text-lg nodrag">
-            Message:
+          <label htmlFor="text" className="font-bold text-lg nodrag flex gap-2">
+            <MessageSquareText />
+            <span>Chat Message</span>
           </label>
           <div className="flex w-fit justify-end gap-4">
             <button
@@ -180,7 +181,7 @@ export function LLMPromptNode(props: LLMNodeProps) {
         {props.data.showDebug && (
           <div className="absolute translate-x-full -translate-y-2 w-full transition-opacity duration-500 bg-blue-200 rounded p-4 border-blue-600 border opacity-0 group-hover:opacity-100">
             <pre className="overflow-scroll">
-              <code>{JSON.stringify(props.data, null, 2)}</code>
+              <code>{JSON.stringify({...props.data, id: props.id}, null, 2)}</code>
             </pre>
           </div>
         )}
