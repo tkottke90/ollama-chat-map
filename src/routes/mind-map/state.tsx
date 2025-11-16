@@ -123,8 +123,6 @@ export function useMindMapState(
     // Check if we have a selectedNode
     const selected = getNodes();
 
-    console.dir(selected)
-
     // Create edges
     const edges: Edge[] = selected
       .filter(node => 
@@ -135,8 +133,6 @@ export function useMindMapState(
         source: node.id,
         target: newNode.id
       }))
-
-    console.dir(selected);
 
     setMindMap((prevMap) => {
       return addToMindMap(prevMap, {
