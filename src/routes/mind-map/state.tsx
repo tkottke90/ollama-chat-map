@@ -1,17 +1,21 @@
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { MindMap } from "@/lib/types/mind-map";
-import { Nullable } from "@/lib/utility-types";
+import { BaseProps, Nullable } from "@/lib/utility-types";
 import { addEdge, Connection, Edge, Node, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
-import { useCallback, useState } from "preact/hooks";
+import { createContext } from "preact";
+import { useCallback, useContext, useState } from "preact/hooks";
 
 export type AddNodeFn = (input: NodeDefinitionInput<any>) => Node;
 export type AddNodeFactory = (factory: AddNodeFn) => void;
 
 
+const stateContext = createContext<{ mindMap: Nullable<MindMap> }>({} as any);
+
 export function useMindMapState(
   initialNodes: Node[] =  [],
   initialEdges: Edge[] = []
 ) {
+  const { getNodes } = useReactFlow();
   const [ nodes, setNodes, onNodesChange ] = useNodesState(initialNodes);
   const [ edges, setEdges, onEdgesChange ] = useEdgesState(initialEdges);
 
@@ -25,7 +29,10 @@ export function useMindMapState(
     updated_at: new Date().toISOString(),
   });
 
-  const { getNodes } = useReactFlow();
+  const StateContext = useCallback(
+    (props: BaseProps) => <stateContext.Provider value={{ mindMap }} {...props} />,
+    [ mindMap ]
+  );
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -75,6 +82,17 @@ export function useMindMapState(
     onNodesChange,
     onEdgesChange,
     onConnect,
-    onAddNode
+    onAddNode,
+    StateContext
   }
+}
+
+export function useMindMapStateContext() {
+  const ctx = useContext(stateContext);
+  
+  if (!ctx) {
+    throw new Error ('No Mind Map Context Found.  Make sure there is a StateContext parent element')
+  }
+
+  return ctx;
 }
