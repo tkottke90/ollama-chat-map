@@ -13,4 +13,4 @@ export type Nullable<T> = T | null;
 export type BaseProps<
  TProps extends ComponentProps = ComponentProps, 
  TRef = any
-> = RenderableProps<TProps, TRef>
+> = RenderableProps<TProps & ComponentProps, TRef>

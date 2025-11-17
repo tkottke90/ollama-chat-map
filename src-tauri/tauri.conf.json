@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "ai-mind-map",
+        "title": "AI Mind Map",
         "width": 1500,
         "height": 800
       }

@@ -127,6 +127,14 @@
     height: 1rem;
   }
 
+  dialog {
+    outline-color: transparent important;
+  }
+
+  dialog::backdrop {
+    @apply bg-background opacity-50;
+  }
+
   textarea,
   input {
     background-color: #eee;
