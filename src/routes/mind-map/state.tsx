@@ -1,15 +1,21 @@
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { MindMap } from "@/lib/types/mind-map";
 import { BaseProps, Nullable } from "@/lib/utility-types";
+import { createContextWithHook } from "@/lib/utils";
 import { addEdge, Connection, Edge, Node, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
-import { createContext } from "preact";
-import { useCallback, useContext, useState } from "preact/hooks";
+import { useCallback, useState } from "preact/hooks";
 
 export type AddNodeFn = (input: NodeDefinitionInput<any>) => Node;
 export type AddNodeFactory = (factory: AddNodeFn) => void;
 
-
-const stateContext = createContext<{ mindMap: Nullable<MindMap> }>({} as any);
+const {
+  useHook,
+  Provider
+} = createContextWithHook<{ 
+  mindMap: Nullable<MindMap>, 
+  updateMindMap: (callback: (prev: MindMap) => MindMap) => void, 
+  onAddNode: AddNodeFactory
+}>();
 
 export function useMindMapState(
   initialNodes: Node[] =  [],
@@ -28,11 +34,6 @@ export function useMindMapState(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
-
-  const StateContext = useCallback(
-    (props: BaseProps) => <stateContext.Provider value={{ mindMap }} {...props} />,
-    [ mindMap ]
-  );
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -75,6 +76,38 @@ export function useMindMapState(
     setEdges((prev) => prev.concat(...newEdges))
   }, []);
 
+  const StateContext = useCallback(
+    (props: BaseProps) => {
+
+      return (<Provider value={{
+        mindMap,
+        onAddNode,
+        updateMindMap: (callback) => {
+          setMindMap(prev => {
+            let nextMindMap = prev ? { ...prev } : null;
+            
+            // No mind map setup, so we need to create one
+            if (!nextMindMap) {
+              nextMindMap = {
+                id: Date.now(),
+                name: 'Untitled',
+                description: '',
+                edges: [],
+                nodes: [],
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            }
+
+            // Update the mind map
+            return callback(nextMindMap);
+          })
+        }
+      }} {...props} />)
+    },
+    [ mindMap ]
+  );
+
   return {
     nodes,
     edges,
@@ -87,12 +120,4 @@ export function useMindMapState(
   }
 }
 
-export function useMindMapStateContext() {
-  const ctx = useContext(stateContext);
-  
-  if (!ctx) {
-    throw new Error ('No Mind Map Context Found.  Make sure there is a StateContext parent element')
-  }
-
-  return ctx;
-}
+export const useMindMapStateContext = useHook;

@@ -32,26 +32,28 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 function ReactFlowCanvas() {
-  const { nodes, edges, onAddNode, onNodesChange, onEdgesChange, onConnect } = useMindMapState(
+  const { nodes, edges, onAddNode, onNodesChange, onEdgesChange, onConnect, StateContext   } = useMindMapState(
     initialNodes,
     initialEdges
   );
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={NodeRegistry.toObject()}
-      fitView
-      fitViewOptions={fitViewOptions}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-    >
-      <Background />
-      <Controls style={{ backgroundColor: '#efefef', padding: '0.25rem', borderRadius: '0.25rem'  }} />
-      <ActionsToolbar addNode={onAddNode} />
-    </ReactFlow>
+    <StateContext>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={NodeRegistry.toObject()}
+        fitView
+        fitViewOptions={fitViewOptions}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+      >
+        <Background />
+        <Controls style={{ backgroundColor: '#efefef', padding: '0.25rem', borderRadius: '0.25rem'  }} />
+        <ActionsToolbar addNode={onAddNode} />
+      </ReactFlow>
+    </StateContext>
   )
 }
 
