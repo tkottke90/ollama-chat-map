@@ -2,7 +2,7 @@ import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { MindMap } from "@/lib/types/mind-map";
 import { BaseProps, Nullable } from "@/lib/utility-types";
 import { createContextWithHook } from "@/lib/utils";
-import { addEdge, Connection, Edge, Node, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
+import { addEdge, Connection, Edge, Node, ReactFlowJsonObject, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useState } from "preact/hooks";
 
 export type AddNodeFn = (input: NodeDefinitionInput<any>) => Node;
@@ -12,29 +12,38 @@ const {
   useHook,
   Provider
 } = createContextWithHook<{ 
-  mindMap: Nullable<MindMap>, 
+  mindMap: Nullable<MindMap>,
   updateMindMap: (callback: (prev: MindMap) => MindMap) => void, 
   onAddNode: AddNodeFactory
 }>();
+
+function persistChanges(flowElements: ReactFlowJsonObject<Node, Edge>, mindMap: Nullable<MindMap>) {
+  return ({
+    // Default values
+    id: Date.now(),
+    name: 'Untitled',
+    fileName: '',
+    description: '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    // Copy the mind map properties
+    ...mindMap,
+    // Overwrite with the flow elements
+    ...flowElements
+  });
+}
 
 export function useMindMapState(
   initialNodes: Node[] =  [],
   initialEdges: Edge[] = []
 ) {
-  const { getNodes } = useReactFlow();
+  const { getNodes, getEdges, toObject } = useReactFlow();
   const [ nodes, setNodes, onNodesChange ] = useNodesState(initialNodes);
   const [ edges, setEdges, onEdgesChange ] = useEdgesState(initialEdges);
 
-  const [ mindMap, setMindMap ] = useState<Nullable<MindMap>>({
-    id: 1,
-    name: 'Untitled',
-    description: 'No description',
-    nodes: initialNodes,
-    edges: initialEdges,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
-
+  /**
+   * Callback for when nodes are connected
+   */
   const onConnect = useCallback(
     (connection: Connection) => {
       setEdges((prev) => {
@@ -44,6 +53,9 @@ export function useMindMapState(
     [],
   );
 
+  /**
+   * Callback for when nodes are added
+   */
   const onAddNode = useCallback((nodeFactory: AddNodeFn) => {
     // Get the position of the last node
     const nodes = getNodes();
@@ -76,11 +88,29 @@ export function useMindMapState(
     setEdges((prev) => prev.concat(...newEdges))
   }, []);
 
+  /**
+   * Context for the mind map state
+   */
   const StateContext = useCallback(
     (props: BaseProps) => {
+      const [ mindMap, setMindMap ] = useState<Nullable<MindMap>>({
+        id: 1,
+        name: 'Untitled',
+        fileName: '',
+        description: 'No description',
+        nodes: initialNodes,
+        edges: initialEdges,
+        viewport: { x: 0, y: 0, zoom: 1 },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
 
       return (<Provider value={{
-        mindMap,
+        mindMap: mindMap !== null ? {
+          ...mindMap,
+          ...toObject()
+        } : null,
         onAddNode,
         updateMindMap: (callback) => {
           setMindMap(prev => {
@@ -91,27 +121,36 @@ export function useMindMapState(
               nextMindMap = {
                 id: Date.now(),
                 name: 'Untitled',
+                fileName: '',
                 description: '',
-                edges: [],
-                nodes: [],
+                edges: getEdges(),
+                nodes: getNodes(),
+                viewport: { x: 0, y: 0, zoom: 1 },
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               }
             }
 
+            const flowObj = toObject();
+
+            nextMindMap.nodes = flowObj.nodes;
+            nextMindMap.edges = flowObj.edges;
+            nextMindMap.viewport = flowObj.viewport;
+
             // Update the mind map
-            return callback(nextMindMap);
+            return callback(
+              persistChanges(flowObj, nextMindMap)
+            );
           })
         }
       }} {...props} />)
     },
-    [ mindMap ]
+    []
   );
 
   return {
     nodes,
     edges,
-    mindMap,
     onNodesChange,
     onEdgesChange,
     onConnect,

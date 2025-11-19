@@ -11,7 +11,7 @@ import {
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Item } from "@/components/ui/item";
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { BaseProps } from "@/lib/utility-types";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
@@ -43,15 +43,20 @@ function ToolbarSeparator() {
 function FileDrawer() {
   const { mindMap, updateMindMap } = useMindMapStateContext();
 
+  const [open, setOpen] = useState(false);
+  const [ hasChanges, setHasChanges ] = useState(false);
+  const [ title, setTitle ] = useState(mindMap?.name ?? '');
+  const [ desc, setDesc ] = useState(mindMap?.description ?? '');
+
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button className="w-full p-2 cursor-pointer! hover:bg-blue-100"><File className={iconSize} /></button>
       </SheetTrigger>
-      <SheetContent side="left" className=" text-white h-full overflow-hidden grid grid-rows-[auto_1fr_auto] gap-4">
+      <SheetContent side="left" className=" text-white h-full overflow-hidden grid grid-rows-[auto_1fr_auto] gap-4 z-100">
         <SheetHeader className={"h-fit"}>
           <SheetTitle className="text-white font-bold text-xl">Current Mind Map</SheetTitle>
-          <SheetDescription>This file contains the details about your currently open mind map</SheetDescription>
         </SheetHeader>
 
         <ScrollArea className={"px-4"}>
@@ -69,17 +74,20 @@ function FileDrawer() {
           <FieldSet>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="name">
-                  <span>Filename</span>
-                  
-                </FieldLabel>
-                <FieldDescription>The name of your file</FieldDescription>
+                <FieldLabel htmlFor="name">Filename</FieldLabel>
                 <Input 
+                  tabIndex={0}
                   id="name"
                   autoComplete="off"
                   placeholder="Untitled"
-                  defaultValue={mindMap?.name}
+                  defaultValue={title}
+                  onChange={(e) => {
+                    setTitle(e.currentTarget.value);
+                    setHasChanges(true);
+                  }}
                 />
+
+                <FieldDescription>/home/user/{mindMap?.name}.json</FieldDescription>
               </Field>
 
               <Field>
@@ -94,6 +102,11 @@ function FileDrawer() {
                   placeholder="Describe the conversation"
                   rows={10}
                   className="resize-none overflow-y-auto"
+                  defaultValue={desc}
+                  onChange={(e) => {
+                    setDesc(e.currentTarget.value);
+                    setHasChanges(true);
+                  }}
                 />
                 <FieldDescription>
                   Describe the conversation that you had with the AI
@@ -104,9 +117,24 @@ function FileDrawer() {
         </ScrollArea>
 
         <SheetFooter className={"h-fit"}>
-          <Button type="submit">Save changes</Button>
+          <Button 
+            className="bg-green-500 hover:bg-green-600 disabled:bg-green-700 cursor-pointer"
+            variant="secondary"
+            type="submit"
+            disabled={!hasChanges}
+            onClick={() => {
+              updateMindMap(prev => ({
+                ...prev,
+                name: title ?? prev.name,
+                description: desc ?? prev.description,
+                updated_at: new Date().toISOString()
+              }))
+
+              setHasChanges(false);
+            }}
+          >Save changes</Button>
           <SheetClose asChild>
-            <Button variant="outline">Close</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>
@@ -115,28 +143,23 @@ function FileDrawer() {
 }
 
 function AddNodeMenu() {
-  const [ showAddMenu, setShowAddMenu ] = useState(false);
   const { onAddNode } = useMindMapStateContext();
 
   return (
-    <DropdownMenu open={showAddMenu}>
-    <DropdownMenuTrigger className="w-full p-2 cursor-pointer! hover:bg-blue-100" onMouseEnter={() => {
-      setShowAddMenu(true)
-    }}>
-      <SquarePlus className={iconSize} />
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" side="right" sideOffset={10} onMouseLeave={() => {
-      setShowAddMenu(false)
-    }}>
-      <DropdownMenuLabel>
-        <strong>Add Nodes</strong>
-      </DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={() => onAddNode(LlmPromptNodeDefinition)}>
-        <MessageSquareText className={iconSize} />
-        <span>Chat Message</span>
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+    <DropdownMenu>
+      <DropdownMenuTrigger className="w-full p-2 cursor-pointer! hover:bg-blue-100">
+        <SquarePlus className={iconSize} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="right" sideOffset={10} >
+        <DropdownMenuLabel>
+          <strong>Add Nodes</strong>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onAddNode(LlmPromptNodeDefinition)}>
+          <MessageSquareText className={iconSize} />
+          <span>Chat Message</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

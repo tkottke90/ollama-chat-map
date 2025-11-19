@@ -18,7 +18,7 @@
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
+  --muted-foreground: hsl(215, 27%, 74%);
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
@@ -90,7 +90,7 @@
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
+  --muted-foreground: hsl(215, 10%, 65%);
   --accent: oklch(0.279 0.041 260.031);
   --accent-foreground: oklch(0.984 0.003 247.858);
   --destructive: oklch(0.704 0.191 22.216);
@@ -173,13 +173,11 @@
 
   .react-flow__node-default,
   .node {
-    @apply bg-card rounded-md p-8;
+    @apply bg-card rounded-md p-8 w-[80vw] sm:w-[70ch];
 
     padding: 0.5rem;
 
     border-radius: 0.5rem;
-
-    width: 70ch;
   }
 
   .react-flow__handle {

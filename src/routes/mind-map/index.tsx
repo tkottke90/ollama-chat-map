@@ -32,7 +32,7 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 function ReactFlowCanvas() {
-  const { nodes, edges, onAddNode, onNodesChange, onEdgesChange, onConnect, StateContext   } = useMindMapState(
+  const { nodes, edges, onAddNode, onNodesChange, onEdgesChange, onConnect, StateContext } = useMindMapState(
     initialNodes,
     initialEdges
   );
