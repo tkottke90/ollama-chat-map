@@ -22,7 +22,7 @@ const onConnect = (params: unknown) => console.log("handle onConnect", params);
  * @param input
  * @returns
  */
-export function LlmPromptNodeDefinition(input: NodeDefinitionInput<ChatNodeData>): LLMNodeProps {
+export function llmPromptNodeFactory(input: NodeDefinitionInput<ChatNodeData>): LLMNodeProps {
   return {
     id: crypto.randomUUID(),
     type: "llm-prompt",
@@ -33,7 +33,7 @@ export function LlmPromptNodeDefinition(input: NodeDefinitionInput<ChatNodeData>
   };
 }
 
-function UserMessage({ locked, message, onSubmit }: { locked: boolean; message: string; onSubmit: (value: string) => void }) {
+function UserMessage({ locked, message, onSubmit, onChange }: { locked: boolean; message: string; onSubmit: (value: string) => void, onChange?: (value: string) => void }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   
   if (!locked) {
@@ -44,6 +44,9 @@ function UserMessage({ locked, message, onSubmit }: { locked: boolean; message: 
           disabled={locked}
           id="text"
           name="text"
+          onChange={(evt) => {
+            onChange?.((evt.currentTarget as HTMLTextAreaElement).value ?? "");
+          }}
           onKeyDown={EnterHandler(async (evt) => {
             if (!evt.currentTarget) return;
 
@@ -142,6 +145,12 @@ export function LLMPromptNode(props: LLMNodeProps) {
         <UserMessage
           locked={props.data.locked}
           message={props.data.userMessage?.content ?? ""}
+          onChange={(msg: string) => {
+            const currentState = ChatNodeData.toChatNodeData(props.data);
+            currentState.userMessage = { role: 'user', content: msg };
+
+            updateNodeData(props.id, currentState, { replace: true });
+          }}
           onSubmit ={async (value: string) => {
             const currentState = ChatNodeData.toChatNodeData(props.data);
 

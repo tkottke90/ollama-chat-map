@@ -13,3 +13,12 @@ export interface MindMap {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * Data structure of the stored JSON Mind Map before it has been ingested into 
+ * the React Flow Elements
+ */
+export interface PersistentMindMap extends Omit<MindMap, 'nodes' | 'edges'> {
+  nodes: Record<string, any>[];
+  edges: Record<string, any>[];  
+}

@@ -1,6 +1,6 @@
 // Persistence layer - handles reading and writing to disk
 use super::types::{ActiveFileState, MindMap};
-use tauri::{AppHandle, Manager};
+use tauri::Manager;
 
 /// Load ActiveFileState from disk
 pub(crate) fn load_active_file_state<R: tauri::Runtime>(
@@ -33,8 +33,8 @@ pub(crate) fn load_active_file_state<R: tauri::Runtime>(
 }
 
 /// Load a mind map from disk
-pub(crate) fn load_mind_map_from_disk(
-  app: &AppHandle,
+pub(crate) fn load_mind_map_from_disk<R: tauri::Runtime>(
+  app: &tauri::AppHandle<R>,
   file_name: &str
 ) -> Result<MindMap, String> {
   let app_data_dir = app.path().app_data_dir()

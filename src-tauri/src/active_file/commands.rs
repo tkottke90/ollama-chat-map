@@ -1,8 +1,8 @@
 // Tauri command handlers for mind map operations
-use super::cache::{get_current_mind_map, update_cache};
+use super::cache::update_cache;
 use super::manager::MindMapManager;
 use super::persistence::{load_mind_map_from_disk, persist_active_file_state};
-use super::types::MindMap;
+use super::types::{MindMap, SaveState};
 use chrono::Utc;
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -21,7 +21,7 @@ pub fn create_mind_map(
   description: String
 ) -> Result<(), String> {
   let new_mind_map = MindMap {
-    id: 0, // TODO: Generate proper ID or get from database
+    id: 0,
     name,
     description,
     file_name: "".to_string(),
@@ -31,14 +31,11 @@ pub fn create_mind_map(
     updated_at: Utc::now().to_rfc3339(),
   };
 
-  // Don't cache yet - wait until first save
-  // Clear the current path since this is a new unsaved mind map
-  let mut state = manager.state.lock()
-    .map_err(|e| format!("Failed to lock state: {}", e))?;
-
-  state.current_mind_map_path = None;
+  // Set as active mind map with empty path (unsaved)
+  manager.set_active_mind_map(new_mind_map.clone(), String::new());
 
   // Persist the updated ActiveFileState to disk
+  let state = manager.get_state();
   persist_active_file_state(&app, &state)?;
 
   // Emit to frontend
@@ -48,15 +45,39 @@ pub fn create_mind_map(
 }
 
 /// Tauri command to get the current mind map state
-/// Always returns a mind map (creates default if none exists)
+/// Always returns a mind map (backend always has one loaded)
 #[tauri::command]
 pub fn get_mind_map(
-  manager: State<'_, MindMapManager>,
-  app: AppHandle
+  manager: State<'_, MindMapManager>
 ) -> Result<MindMap, String> {
-  // With lazy creation, this always succeeds
-  let (mind_map, _path) = get_current_mind_map(&manager, &app)?;
+  // Simply return the active mind map (always present)
+  let mind_map = manager.get_active_mind_map();
+
+  // Debug logging
+  println!("📤 get_mind_map called:");
+  println!("   - Name: {}", mind_map.name);
+  println!("   - File: {}", mind_map.file_name);
+  println!("   - Nodes: {} items",
+    mind_map.nodes.as_array().map(|a| a.len()).unwrap_or(0));
+  println!("   - Edges: {} items",
+    mind_map.edges.as_array().map(|a| a.len()).unwrap_or(0));
+
   Ok(mind_map)
+}
+
+/// Tauri command to get the save state
+#[tauri::command]
+pub fn get_save_state(
+  manager: State<'_, MindMapManager>
+) -> Result<SaveState, String> {
+  let is_saved = manager.is_saved();
+  let last_saved_at = manager.get_last_saved_at()
+    .map(|dt| dt.to_rfc3339());
+
+  Ok(SaveState {
+    is_saved,
+    last_saved_at,
+  })
 }
 
 /// Tauri command to load a mind map and broadcast to all windows
@@ -70,16 +91,17 @@ pub fn load_mind_map(
   // Load from disk
   let mind_map = load_mind_map_from_disk(&app, &file_name)?;
 
-  // Update cache using helper
+  // Update cache (for quick switching)
   update_cache(&manager, file_name.clone(), mind_map.clone());
 
-  // Update state
-  let mut state = manager.state.lock()
-    .map_err(|e| format!("Failed to lock state: {}", e))?;
+  // Set as active mind map
+  manager.set_active_mind_map(mind_map.clone(), file_name.clone());
 
-  state.current_mind_map_path = Some(file_name);
+  // Add to recent files
+  manager.add_recent_file(file_name);
 
   // Persist the updated state to disk
+  let state = manager.get_state();
   persist_active_file_state(&app, &state)?;
 
   // Emit to all windows since this is an external change
@@ -126,18 +148,19 @@ pub fn save_mind_map(
   std::fs::write(&file_path, json_string)
     .map_err(|e| format!("Failed to write file: {}", e))?;
 
-  println!("Mind map saved to: {:?}", file_path);
+  println!("💾 Mind map saved to: {:?}", file_path);
 
-  // Update cache (after successful disk write) using helper
+  // Update cache (for quick switching)
   update_cache(&manager, file_name.clone(), mind_map.clone());
 
-  // Update state (just the path)
-  let mut state = manager.state.lock()
-    .map_err(|e| format!("Failed to lock state: {}", e))?;
+  // Set as active mind map
+  manager.set_active_mind_map(mind_map.clone(), file_name.clone());
 
-  state.current_mind_map_path = Some(file_name);
+  // Add to recent files
+  manager.add_recent_file(file_name);
 
   // Persist the updated ActiveFileState to disk
+  let state = manager.get_state();
   persist_active_file_state(&app, &state)?;
 
   // Emit to all windows since this is an external change
@@ -146,26 +169,19 @@ pub fn save_mind_map(
   Ok(())
 }
 
-/// Tauri command to flush the current cached mind map to disk
+/// Tauri command to flush the current active mind map to disk
 #[tauri::command]
 pub fn flush_mind_map(
   manager: State<'_, MindMapManager>,
   app: AppHandle
 ) -> Result<(), String> {
-  // Check cache size - if we have 2 or more entries, skip the flush
-  // This indicates there haven't been many changes recently
-  let cache_size = manager.cache.entry_count();
-  if cache_size >= 2 {
-    println!("⏭️  Skipping flush - cache has {} entries (threshold: 2)", cache_size);
-    return Ok(());
-  }
+  // Get active mind map and path
+  let mind_map = manager.get_active_mind_map();
+  let path = manager.get_current_path();
 
-  // Get current mind map from cache or disk
-  let (mind_map, path) = get_current_mind_map(&manager, &app)?;
-
-  // If this is the default "untitled.json" and hasn't been saved yet, skip flushing
-  if path == "untitled.json" && mind_map.file_name.is_empty() {
-    println!("⏭️  Skipping flush for unsaved default mind map");
+  // If no path set (unsaved new map), skip flushing
+  if path.is_empty() || mind_map.file_name.is_empty() {
+    println!("⏭️  Skipping flush for unsaved mind map");
     return Ok(());
   }
 
@@ -188,30 +204,10 @@ pub fn flush_mind_map(
   std::fs::write(&file_path, json_string)
     .map_err(|e| format!("Failed to write file: {}", e))?;
 
+  // Mark as saved
+  manager.mark_saved();
+
   println!("💾 Mind map flushed to disk: {:?}", file_path);
-
-  // After successful flush, clean up the cache by removing all entries except the current one
-  // Collect all keys except the current path
-  let keys_to_remove: Vec<String> = manager.cache
-    .iter()
-    .filter_map(|entry| {
-      let key = entry.key().clone();
-      if key != path {
-        Some(key)
-      } else {
-        None
-      }
-    })
-    .collect();
-
-  // Remove all old entries from cache
-  for key in &keys_to_remove {
-    manager.cache.invalidate(key);
-  }
-
-  if !keys_to_remove.is_empty() {
-    println!("🧹 Cleaned up {} old cache entries", keys_to_remove.len());
-  }
 
   Ok(())
 }
@@ -220,20 +216,12 @@ pub fn flush_mind_map(
 #[tauri::command]
 pub fn update_edges(
   manager: State<'_, MindMapManager>,
-  app: AppHandle,
   edges: serde_json::Value
 ) -> Result<(), String> {
-  // Get current mind map from cache or disk
-  let (mut mind_map, path) = get_current_mind_map(&manager, &app)?;
+  // Update edges in active mind map
+  manager.update_edges(edges);
 
-  // Update edges
-  mind_map.edges = edges;
-  mind_map.updated_at = Utc::now().to_rfc3339();
-
-  // Update cache immediately (fast, in-memory)
-  update_cache(&manager, path, mind_map.clone());
-
-  println!("✅ Edges updated in cache for: {}", mind_map.file_name);
+  println!("✅ Edges updated in active mind map");
 
   Ok(())
 }
@@ -242,20 +230,12 @@ pub fn update_edges(
 #[tauri::command]
 pub fn update_nodes(
   manager: State<'_, MindMapManager>,
-  app: AppHandle,
   nodes: serde_json::Value
 ) -> Result<(), String> {
-  // Get current mind map from cache or disk
-  let (mut mind_map, path) = get_current_mind_map(&manager, &app)?;
+  // Update nodes in active mind map
+  manager.update_nodes(nodes);
 
-  // Update nodes
-  mind_map.nodes = nodes;
-  mind_map.updated_at = Utc::now().to_rfc3339();
-
-  // Update cache immediately (fast, in-memory)
-  update_cache(&manager, path, mind_map.clone());
-
-  println!("✅ Nodes updated in cache for: {}", mind_map.file_name);
+  println!("✅ Nodes updated in active mind map");
 
   Ok(())
 }

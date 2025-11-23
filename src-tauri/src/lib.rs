@@ -1,5 +1,6 @@
 mod ollama;
 mod active_file;
+mod app_menu;
 
 use tauri::{Builder, Manager};
 use std::sync::Mutex;
@@ -19,6 +20,9 @@ pub fn run() {
           // Initialize MindMapManager with cache
           let mind_map_manager = active_file::initialize_mind_map_manager(app);
           app.manage(mind_map_manager);
+
+          app_menu::configure(app)?;
+
           Ok(())
         })
         .plugin(tauri_plugin_sql::Builder::new().build())
@@ -28,6 +32,7 @@ pub fn run() {
             ollama::ollama_chat,
             ollama::set_ollama_config,
             active_file::commands::get_mind_map,
+            active_file::commands::get_save_state,
             active_file::commands::load_mind_map,
             active_file::commands::save_mind_map,
             active_file::commands::create_mind_map,
