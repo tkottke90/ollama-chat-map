@@ -26,15 +26,18 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
   let handle = app.handle();
 
   let default_menu = SubmenuBuilder::new(app, "default")
+    .text("new", "New")
+    .text("open", "Open")
+    .separator()
     .text("settings", "Settings")
     .separator()
     .text("quit", "Quit AI Mind Map")
     .build()?;
   
   let window_menu = SubmenuBuilder::new(app, "Window")
-    .text("new", "New")
-    .text("open", "Open")
-    .text("save", "Save")
+    .text("debugViewport", "Show Viewport Position")
+    .separator()
+    .text("fullScreen", "Fullscreen")
     .build()?;
 
 

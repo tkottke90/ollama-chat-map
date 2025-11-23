@@ -1,11 +1,11 @@
 import { Panel, useReactFlow } from "@xyflow/react";
-import { ZoomInIcon, ZoomOutIcon } from "lucide-preact";
+import { Fullscreen, ZoomInIcon, ZoomOutIcon } from "lucide-preact";
 import { useEffect, useState } from "preact/hooks";
 import { iconStyle } from "./toolbar-constants";
 import { ToolbarButton } from "./toolbar-utils";
 
 export function ZoomIn() {
-  const { getZoom, zoomIn } = useReactFlow();
+  const { zoomIn } = useReactFlow();
 
   return (
     <ToolbarButton>
@@ -15,11 +15,7 @@ export function ZoomIn() {
 }
 
 export function ZoomOut() {
-  const { getZoom, zoomOut } = useReactFlow();
-
-  console.dir({
-    zoom: getZoom()
-  });
+  const { zoomOut } = useReactFlow();
 
   return (
     <ToolbarButton className="relative">
@@ -29,7 +25,13 @@ export function ZoomOut() {
 }
 
 export function ZoomToFit() {
+  const { fitView } = useReactFlow();
 
+  return (
+    <ToolbarButton className="relative">
+      <Fullscreen className={iconStyle} onClick={() => fitView({ interpolate: 'smooth', padding: 0, duration: 500 })} />
+    </ToolbarButton>
+  )
 }
 
  

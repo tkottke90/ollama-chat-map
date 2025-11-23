@@ -6,7 +6,7 @@ import { AddNodeMenu } from "./toolbar/add-nodes";
 import { FileDrawer } from "./toolbar/file-drawer";
 import { iconStyle } from "./toolbar/toolbar-constants";
 import { ToolbarButton, ToolbarGroup, ToolbarSeparator } from "./toolbar/toolbar-utils";
-import { ZoomIn, ZoomOut } from "./toolbar/viewport-controls";
+import { ZoomIn, ZoomOut, ZoomToFit } from "./toolbar/viewport-controls";
 
 interface ActionMenuProps extends BaseProps {}
 
@@ -26,6 +26,7 @@ export function ActionsToolbar({}: ActionMenuProps) {
       <ToolbarGroup>
         <ZoomIn />
         <ZoomOut />
+        <ZoomToFit />
       </ToolbarGroup>
     </Panel>
   )
