@@ -1,8 +1,10 @@
+import { LucideIcon, Orbit } from "lucide-preact";
 
 
 export class BaseNodeData {
   [key: string]: unknown;
 
+  icon: LucideIcon = Orbit
   showDebug = false;
 }
 

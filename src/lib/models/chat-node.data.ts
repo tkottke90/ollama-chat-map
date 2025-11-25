@@ -1,3 +1,4 @@
+import { MessageSquareText } from "lucide-preact";
 import { ChatMessage } from "../types/conversation";
 import { BaseNodeData } from "./base-node.data";
 
@@ -20,6 +21,8 @@ export class ChatNodeData extends BaseNodeData {
    * The AI's response to a users message
    */
   aiResponse?: ChatMessage;
+
+  icon = MessageSquareText
 
   constructor(data?: Partial<ChatNodeData>) {
     super();
