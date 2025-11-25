@@ -16,7 +16,7 @@ import ViewportLogger from "./toolbar/viewport-controls";
 type MindMapProps = BaseProps
 
 const fitViewOptions: FitViewOptions = {
-  padding: 1.5,
+  padding: 1.5
 };
 
 // Empty initial state - backend will provide the actual data
@@ -37,6 +37,8 @@ function ReactFlowCanvas() {
         nodeTypes={NodeRegistry.toObject()}
         fitView
         fitViewOptions={fitViewOptions}
+        maxZoom={1.5}
+        minZoom={0.1}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

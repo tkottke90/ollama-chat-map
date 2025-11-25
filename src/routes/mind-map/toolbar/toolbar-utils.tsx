@@ -4,7 +4,7 @@ import { forwardRef } from "preact/compat";
 
 export const ToolbarButton = forwardRef<HTMLButtonElement, BaseProps>((props, ref) => {
   return (
-    <button {...props} ref={ref} className={cn("w-full p-2 cursor-pointer! hover:bg-blue-100 rounded", props.className)} />
+    <button {...props} ref={ref} className={cn("w-full p-2 cursor-pointer! hover:bg-blue-200 rounded", props.className)} />
   )
 })
 

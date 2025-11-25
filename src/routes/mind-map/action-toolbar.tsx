@@ -43,8 +43,8 @@ function SaveButton() {
     <ToolbarButton
       className={`w-full p-2 cursor-pointer! transition-colors ${
         saveState.isSaved
-          ? 'bg-green-100 hover:bg-green-200'
-          : 'bg-yellow-100 hover:bg-yellow-200'
+          ? 'bg-green-200 hover:bg-green-300 hover:stroke-green-900'
+          : 'bg-yellow-200 hover:bg-yellow-300'
       } ${saveState.isSaving ? 'opacity-50 cursor-wait!' : ''}`}
       onClick={handleSave}
       disabled={saveState.isSaving}
