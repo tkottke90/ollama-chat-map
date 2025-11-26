@@ -56,7 +56,7 @@ pub(crate) fn load_mind_map_from_disk<R: tauri::Runtime>(
 }
 
 /// Persist ActiveFileState to disk
-pub(crate) fn persist_active_file_state<R: tauri::Runtime>(
+pub fn persist_active_file_state<R: tauri::Runtime>(
   app: &tauri::AppHandle<R>,
   state: &ActiveFileState
 ) -> Result<(), String> {

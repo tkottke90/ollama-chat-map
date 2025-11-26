@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::app_menu::events::on_debug_viewport;
+use crate::app_menu::events::{on_debug_viewport, on_new};
 use tauri::menu::{Menu, MenuBuilder, MenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 
@@ -59,6 +59,9 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     match event.id().0.as_str() {
       "debugViewport" => {
         on_debug_viewport(app_handle, window_menu.clone());
+      }
+      "new" => {
+        on_new(app_handle);
       }
       _ => {} // Do nothing when there is no match
     }

@@ -17,6 +17,7 @@ use crate::files;
 // Re-export public types and functions
 pub use manager::MindMapManager;
 pub use types::{create_empty_mind_map, create_tutorial_mind_map, is_first_time_user};
+pub use persistence::persist_active_file_state;
 
 // Public initialization function
 use persistence::{load_active_file_state, load_mind_map_from_disk};
