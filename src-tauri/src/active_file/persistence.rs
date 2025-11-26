@@ -1,13 +1,13 @@
 // Persistence layer - handles reading and writing to disk
 use super::types::{ActiveFileState, MindMap};
-use tauri::Manager;
+use crate::active_file::files;
 
 /// Load ActiveFileState from disk
 pub(crate) fn load_active_file_state<R: tauri::Runtime>(
   app: &tauri::AppHandle<R>
 ) -> Result<ActiveFileState, String> {
   // Get app data directory
-  let app_data_dir = app.path().app_data_dir()
+  let app_data_dir = files::build_config_path(app)
     .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
   // Build file path for the state file
@@ -37,7 +37,7 @@ pub(crate) fn load_mind_map_from_disk<R: tauri::Runtime>(
   app: &tauri::AppHandle<R>,
   file_name: &str
 ) -> Result<MindMap, String> {
-  let app_data_dir = app.path().app_data_dir()
+  let app_data_dir = files::build_data_path(app)
     .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
   let file_path = app_data_dir.join(file_name);
@@ -65,7 +65,7 @@ pub(crate) fn persist_active_file_state<R: tauri::Runtime>(
     .map_err(|e| format!("Failed to serialize ActiveFileState: {}", e))?;
 
   // Get app data directory
-  let app_data_dir = app.path().app_data_dir()
+  let app_data_dir = files::build_config_path(app)
     .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
   // Create directory if it doesn't exist

@@ -1,10 +1,12 @@
 // Tauri command handlers for mind map operations
+use crate::active_file::files;
+
 use super::cache::update_cache;
 use super::manager::MindMapManager;
 use super::persistence::{load_mind_map_from_disk, persist_active_file_state};
 use super::types::{MindMap, SaveState};
 use chrono::Utc;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, State};
 
 /// Helper function to emit state updates to the frontend
 fn emit_state_update(app: &AppHandle, mind_map: &MindMap) -> Result<(), String> {
@@ -118,7 +120,7 @@ pub fn save_mind_map(
   mut mind_map: MindMap
 ) -> Result<(), String> {
   // Get app data directory
-  let app_data_dir = app.path().app_data_dir()
+  let app_data_dir = files::build_data_path(&app)
     .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
   // Create directory if it doesn't exist
@@ -186,7 +188,7 @@ pub fn flush_mind_map(
   }
 
   // Get app data directory
-  let app_data_dir = app.path().app_data_dir()
+  let app_data_dir = files::build_data_path(&app)
     .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
   // Create directory if it doesn't exist

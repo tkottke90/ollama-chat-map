@@ -1,6 +1,7 @@
 mod ollama;
 mod active_file;
 mod app_menu;
+mod files;
 
 use tauri::{Builder, Manager};
 use std::sync::Mutex;

@@ -12,6 +12,7 @@ pub mod commands;
 mod manager;
 mod persistence;
 mod types;
+use crate::files;
 
 // Re-export public types and functions
 pub use manager::MindMapManager;
@@ -20,7 +21,6 @@ pub use types::{create_empty_mind_map, create_tutorial_mind_map, is_first_time_u
 // Public initialization function
 use persistence::{load_active_file_state, load_mind_map_from_disk};
 use types::ActiveFileState;
-use tauri::Manager;
 
 /// Initialize MindMapManager during app setup with eager loading
 /// This ensures the backend always has an active mind map before the frontend starts
@@ -90,7 +90,7 @@ fn save_tutorial_to_disk<R: tauri::Runtime>(
   app: &tauri::AppHandle<R>,
   tutorial: &types::MindMap
 ) -> Result<(), String> {
-  let app_data_dir = app.path().app_data_dir()
+  let app_data_dir = files::build_data_path(app)
     .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
   std::fs::create_dir_all(&app_data_dir)
