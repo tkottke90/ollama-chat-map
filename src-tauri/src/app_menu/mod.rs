@@ -1,6 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use tauri::menu::{Menu, MenuBuilder, MenuEvent, MenuItem, SubmenuBuilder};
+
+use crate::app_menu::events::on_debug_viewport;
+use tauri::menu::{Menu, MenuBuilder, MenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
+
+mod events;
 
 pub fn configure<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {  
   configure_tray(app)?;
@@ -34,8 +38,12 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .text("quit", "Quit AI Mind Map")
     .build()?;
   
+  let show_debug_viewport = CheckMenuItemBuilder::with_id("debugViewport", "Show Viewport Position")
+    .checked(false)
+    .build(app)?;
+
   let window_menu = SubmenuBuilder::new(app, "Window")
-    .text("debugViewport", "Show Viewport Position")
+    .item(&show_debug_viewport)
     .separator()
     .text("fullScreen", "Fullscreen")
     .build()?;
@@ -46,6 +54,15 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .build()?;
 
   app.set_menu(menu)?;
+
+  app.on_menu_event(move |app_handle, event| {
+    match event.id().0.as_str() {
+      "debugViewport" => {
+        on_debug_viewport(app_handle, window_menu.clone());
+      }
+      _ => {} // Do nothing when there is no match
+    }
+  });
   
   Ok(())
 }

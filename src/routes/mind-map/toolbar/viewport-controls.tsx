@@ -1,3 +1,4 @@
+import { useTauriListener } from "@/lib/hooks/useTauriListener";
 import { Panel, ViewportHelperFunctionOptions, useReactFlow } from "@xyflow/react";
 import { Fullscreen, ZoomInIcon, ZoomOutIcon } from "lucide-preact";
 import { useEffect, useState } from "preact/hooks";
@@ -45,9 +46,13 @@ export default function ViewportLogger() {
   const { getViewport } = useReactFlow();
   const [ { x, y, zoom }, setViewport ] = useState(getViewport())
 
+  const showViewportDebug = useTauriListener('aiMindMap://window/updateViewportDisplay', false)
+
   useEffect(() => {
     setViewport(getViewport())
   });
+
+  if (!showViewportDebug) return null;
 
   return <Panel position="bottom-left" className="text-white">
     <p>Position: {x.toFixed(2)},{y.toFixed(2)}</p>
