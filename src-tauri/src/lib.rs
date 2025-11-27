@@ -28,6 +28,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             ollama::ollama_chat,
@@ -39,7 +40,8 @@ pub fn run() {
             active_file::commands::create_mind_map,
             active_file::commands::update_nodes,
             active_file::commands::update_edges,
-            active_file::commands::flush_mind_map
+            active_file::commands::flush_mind_map,
+            active_file::commands::open_file_dialog
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -9,7 +9,7 @@ use chrono::Utc;
 use tauri::{AppHandle, Emitter, State};
 
 /// Helper function to emit state updates to the frontend
-fn emit_state_update(app: &AppHandle, mind_map: &MindMap) -> Result<(), String> {
+fn emit_state_update<R: tauri::Runtime>(app: &AppHandle<R>, mind_map: &MindMap) -> Result<(), String> {
   app.emit("aiMindMap://mindMap/update", mind_map)
     .map_err(|e| format!("Failed to emit state update: {}", e))
 }
@@ -240,5 +240,74 @@ pub fn update_nodes(
   println!("✅ Nodes updated in active mind map");
 
   Ok(())
+}
+
+/// Tauri command to open a file dialog and load the selected mind map
+#[tauri::command]
+pub async fn open_file_dialog<R: tauri::Runtime>(
+  manager: State<'_, MindMapManager>,
+  app: AppHandle<R>
+) -> Result<(), String> {
+  use tauri_plugin_dialog::DialogExt;
+
+  println!("📂 Opening file dialog...");
+
+  // Get the default directory (user's documents/AiMindMap folder)
+  let default_dir = files::build_data_path(&app)
+    .ok()
+    .and_then(|path| path.to_str().map(|s| s.to_string()));
+
+  // Build and show the file dialog
+  let file_path = app
+    .dialog()
+    .file()
+    .set_title("Open Mind Map")
+    .add_filter("Mind Map Files", &["json"])
+    .set_directory(default_dir.unwrap_or_default())
+    .blocking_pick_file();
+
+  // Handle the selected file
+  match file_path {
+    Some(path) => {
+      println!("📂 File selected: {:?}", path);
+
+      // Convert FilePath to PathBuf
+      let path_buf = path.into_path()
+        .map_err(|e| format!("Failed to convert file path: {}", e))?;
+
+      // Extract just the filename from the full path
+      let file_name = path_buf
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "Invalid file name".to_string())?
+        .to_string();
+
+      // Load the mind map from disk
+      let mind_map = load_mind_map_from_disk(&app, &file_name)?;
+
+      // Update cache
+      update_cache(&manager, file_name.clone(), mind_map.clone());
+
+      // Set as active mind map
+      manager.set_active_mind_map(mind_map.clone(), file_name.clone());
+
+      // Add to recent files
+      manager.add_recent_file(file_name);
+
+      // Persist the updated state to disk
+      let state = manager.get_state();
+      persist_active_file_state(&app, &state)?;
+
+      // Emit to frontend
+      emit_state_update(&app, &mind_map)?;
+
+      println!("✅ Mind map loaded successfully");
+      Ok(())
+    }
+    None => {
+      println!("❌ No file selected");
+      Err("No file selected".to_string())
+    }
+  }
 }
 

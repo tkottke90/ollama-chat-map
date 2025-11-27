@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::app_menu::events::{on_debug_viewport, on_new};
+use crate::app_menu::events::{on_debug_viewport, on_new, on_open};
 use tauri::menu::{Menu, MenuBuilder, MenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 
@@ -29,9 +29,12 @@ fn configure_tray<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
 fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
   let handle = app.handle();
 
+  let new_item = MenuItem::with_id(app, "new", "New", true, Some("CmdOrCtrl+N"))?;
+  let open_item = MenuItem::with_id(app, "open", "Open", true, Some("CmdOrCtrl+O"))?;
+
   let default_menu = SubmenuBuilder::new(app, "default")
-    .text("new", "New")
-    .text("open", "Open")
+    .item(&new_item)
+    .item(&open_item)
     .separator()
     .text("settings", "Settings")
     .separator()
@@ -62,6 +65,9 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
       }
       "new" => {
         on_new(app_handle);
+      }
+      "open" => {
+        on_open(app_handle);
       }
       _ => {} // Do nothing when there is no match
     }
