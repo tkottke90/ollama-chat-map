@@ -60,6 +60,13 @@ pub struct SaveState {
   pub last_saved_at: Option<String>, // ISO 8601 timestamp
 }
 
+/// Payload for saving state events
+#[derive(serde::Serialize, Clone)]
+pub struct SavingStatePayload {
+  #[serde(rename = "isSaving")]
+  pub is_saving: bool,
+}
+
 // Helper functions for creating mind maps
 
 /// Create an empty default mind map

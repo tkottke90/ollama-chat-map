@@ -41,6 +41,22 @@ export function registerEvent(
   };
 }
 
+export function registerEventList(
+  target: EventTarget,
+  events: [string, (e: Event) => void][],
+  abort?: AbortController
+) {
+  const abortCtrl = abort ?? new AbortController();
+
+  for (const [name, fn] of events) {
+    target.addEventListener(name, fn, { signal: abortCtrl.signal });
+  }
+
+  return () => {
+    abortCtrl.abort();
+  }
+}
+
 export function useHtmlElementListeners(
   events: [eventName: string, event: (e: Event) => void][],
   inputs: Inputs = []

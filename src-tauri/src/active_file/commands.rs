@@ -1,10 +1,9 @@
 // Tauri command handlers for mind map operations
 use crate::active_file::files;
-
 use super::cache::update_cache;
 use super::manager::MindMapManager;
 use super::persistence::{load_mind_map_from_disk, persist_active_file_state};
-use super::types::{MindMap, SaveState};
+use super::types::{MindMap, SaveState, SavingStatePayload};
 use chrono::Utc;
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -208,6 +207,10 @@ pub fn flush_mind_map(
   manager: State<'_, MindMapManager>,
   app: AppHandle
 ) -> Result<(), String> {
+  // Emit saving started event
+  app.emit("aiMindMap://mindMap/saving", SavingStatePayload { is_saving: true })
+    .map_err(|e| format!("Failed to emit saving started event: {}", e))?;
+
   // Get active mind map and path
   let mind_map = manager.get_active_mind_map();
   let path = manager.get_current_path();
@@ -215,6 +218,11 @@ pub fn flush_mind_map(
   // If no path set (unsaved new map), skip flushing
   if path.is_empty() || mind_map.file_name.is_empty() {
     println!("⏭️  Skipping flush for unsaved mind map");
+
+    // Emit saving completed event even though we skipped
+    app.emit("aiMindMap://mindMap/saving", SavingStatePayload { is_saving: false })
+      .map_err(|e| format!("Failed to emit saving completed event: {}", e))?;
+
     return Ok(());
   }
 
@@ -241,6 +249,10 @@ pub fn flush_mind_map(
   manager.mark_saved();
 
   println!("💾 Mind map flushed to disk: {:?}", file_path);
+
+  // Emit saving completed event
+  app.emit("aiMindMap://mindMap/saving", SavingStatePayload { is_saving: false })
+    .map_err(|e| format!("Failed to emit saving completed event: {}", e))?;
 
   Ok(())
 }

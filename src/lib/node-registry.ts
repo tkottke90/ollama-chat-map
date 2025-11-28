@@ -30,9 +30,7 @@ class NodeRegistry {
 
         return factory(node);
       });
-      
   }
-
 }
 
 export default new NodeRegistry();

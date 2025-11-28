@@ -55,7 +55,9 @@ function ReactFlowCanvas() {
 export function MindMap({}: MindMapProps) {
 
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div
+      className="h-full w-full"
+    >
       <ReactFlowProvider>
         <ReactFlowCanvas />
       </ReactFlowProvider>

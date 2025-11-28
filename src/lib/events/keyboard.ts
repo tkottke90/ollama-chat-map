@@ -1,4 +1,16 @@
 
+type KeyboardHandlerFn = <TEvent extends KeyboardEvent> (event: TEvent) => void
+
+export function MultiKeyHandler<TEvent extends KeyboardEvent>(
+  handlers: KeyboardHandlerFn[]
+) {
+  return (event: TEvent) => {
+    for (const handler of handlers) {
+      handler(event);
+    }
+  };
+}
+
 export function CommandHandler<TEvent extends KeyboardEvent>(
   callback: (event: TEvent) => void | Promise<void>
 ) {

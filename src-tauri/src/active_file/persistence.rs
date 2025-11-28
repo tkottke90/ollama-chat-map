@@ -1,5 +1,5 @@
 // Persistence layer - handles reading and writing to disk
-use super::types::{ActiveFileState, MindMap};
+use super::types::{ActiveFileState, MindMap, SavingStatePayload};
 use crate::active_file::files;
 
 /// Load ActiveFileState from disk
@@ -60,6 +60,12 @@ pub fn persist_active_file_state<R: tauri::Runtime>(
   app: &tauri::AppHandle<R>,
   state: &ActiveFileState
 ) -> Result<(), String> {
+  use tauri::Emitter;
+
+  // Emit saving started event
+  app.emit("aiMindMap://mindMap/saving", SavingStatePayload { is_saving: true })
+    .map_err(|e| format!("Failed to emit saving started event: {}", e))?;
+
   // Serialize the ActiveFileState to JSON
   let json_string = serde_json::to_string_pretty(state)
     .map_err(|e| format!("Failed to serialize ActiveFileState: {}", e))?;
@@ -80,6 +86,10 @@ pub fn persist_active_file_state<R: tauri::Runtime>(
     .map_err(|e| format!("Failed to write ActiveFileState file: {}", e))?;
 
   println!("ActiveFileState saved to: {:?}", state_file_path);
+
+  // Emit saving completed event
+  app.emit("aiMindMap://mindMap/saving", SavingStatePayload { is_saving: false })
+    .map_err(|e| format!("Failed to emit saving completed event: {}", e))?;
 
   Ok(())
 }

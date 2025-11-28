@@ -19,7 +19,6 @@ export function FileDrawer() {
   const [ title, setTitle ] = useState(mindMap?.name ?? '');
   const [ desc, setDesc ] = useState(mindMap?.description ?? '');
 
-  
   useEffect(() => {
     setTitle(mindMap?.name ?? '');
     setDesc(mindMap?.description ?? '');
@@ -28,7 +27,7 @@ export function FileDrawer() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <ToolbarButton><PanelRightOpen className={iconStyle} /></ToolbarButton>
+        <ToolbarButton title="File Details"><PanelRightOpen className={iconStyle} /></ToolbarButton>
       </SheetTrigger>
       <SheetContent side="left" className=" text-white h-full overflow-hidden grid grid-rows-[auto_1fr_auto] gap-4 z-100">
         <SheetHeader className={"h-fit"}>
