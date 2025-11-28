@@ -13,6 +13,7 @@ mod manager;
 mod persistence;
 mod types;
 use crate::files;
+use tauri::Manager;
 
 // Re-export public types and functions
 pub use manager::MindMapManager;
@@ -83,6 +84,22 @@ pub fn initialize_mind_map_manager<R: tauri::Runtime>(app: &tauri::App<R>) -> Mi
 
   // Step 3: Create manager with loaded data
   println!("🚀 MindMapManager initialized with active mind map");
+
+  // Step 4: Update window title
+  if let Some(window) = app_handle.get_webview_window("main") {
+    let title = if active_mind_map.name.is_empty() || active_mind_map.name == "Untitled" {
+      "AI Mind Map - Untitled".to_string()
+    } else {
+      format!("AI Mind Map - {}", active_mind_map.name)
+    };
+
+    if let Err(e) = window.set_title(&title) {
+      eprintln!("⚠️  Failed to set window title: {}", e);
+    } else {
+      println!("🪟 Window title set to: {}", title);
+    }
+  }
+
   MindMapManager::with_loaded_mind_map(updated_state, active_mind_map)
 }
 
