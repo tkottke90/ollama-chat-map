@@ -6,7 +6,7 @@ use super::manager::MindMapManager;
 use super::persistence::{load_mind_map_from_disk, persist_active_file_state};
 use super::types::{MindMap, SaveState};
 use chrono::Utc;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 /// Helper function to emit state updates to the frontend
 fn emit_state_update<R: tauri::Runtime>(app: &AppHandle<R>, mind_map: &MindMap) -> Result<(), String> {
@@ -14,11 +14,33 @@ fn emit_state_update<R: tauri::Runtime>(app: &AppHandle<R>, mind_map: &MindMap) 
     .map_err(|e| format!("Failed to emit state update: {}", e))
 }
 
+/// Helper function to update the window title based on the mind map name
+fn update_window_title<R: tauri::Runtime>(app: &AppHandle<R>, mind_map: &MindMap) -> Result<(), String> {
+  // Get the main window
+  let window = app.get_webview_window("main")
+    .ok_or_else(|| "Failed to get main window".to_string())?;
+
+  // Build the title: "AI Mind Map - {name}"
+  let title = if mind_map.name.is_empty() || mind_map.name == "Untitled" {
+    "AI Mind Map - Untitled".to_string()
+  } else {
+    format!("AI Mind Map - {}", mind_map.name)
+  };
+
+  // Set the window title
+  window.set_title(&title)
+    .map_err(|e| format!("Failed to set window title: {}", e))?;
+
+  println!("🪟 Window title updated to: {}", title);
+
+  Ok(())
+}
+
 /// Tauri command to create a new mind map
 #[tauri::command]
-pub fn create_mind_map(
+pub fn create_mind_map<R: tauri::Runtime>(
   manager: State<'_, MindMapManager>,
-  app: AppHandle,
+  app: AppHandle<R>,
   name: String,
   description: String
 ) -> Result<(), String> {
@@ -39,6 +61,9 @@ pub fn create_mind_map(
   // Persist the updated ActiveFileState to disk
   let state = manager.get_state();
   persist_active_file_state(&app, &state)?;
+
+  // Update window title
+  update_window_title(&app, &new_mind_map)?;
 
   // Emit to frontend
   emit_state_update(&app, &new_mind_map)?;
@@ -85,9 +110,9 @@ pub fn get_save_state(
 /// Tauri command to load a mind map and broadcast to all windows
 /// Use this when loading from database or file
 #[tauri::command]
-pub fn load_mind_map(
+pub fn load_mind_map<R: tauri::Runtime>(
   manager: State<'_, MindMapManager>,
-  app: AppHandle,
+  app: AppHandle<R>,
   file_name: String
 ) -> Result<(), String> {
   // Load from disk
@@ -105,6 +130,9 @@ pub fn load_mind_map(
   // Persist the updated state to disk
   let state = manager.get_state();
   persist_active_file_state(&app, &state)?;
+
+  // Update window title
+  update_window_title(&app, &mind_map)?;
 
   // Emit to all windows since this is an external change
   emit_state_update(&app, &mind_map)?;
@@ -164,6 +192,9 @@ pub fn save_mind_map(
   // Persist the updated ActiveFileState to disk
   let state = manager.get_state();
   persist_active_file_state(&app, &state)?;
+
+  // Update window title
+  update_window_title(&app, &mind_map)?;
 
   // Emit to all windows since this is an external change
   emit_state_update(&app, &mind_map)?;
@@ -297,6 +328,9 @@ pub async fn open_file_dialog<R: tauri::Runtime>(
       // Persist the updated state to disk
       let state = manager.get_state();
       persist_active_file_state(&app, &state)?;
+
+      // Update window title
+      update_window_title(&app, &mind_map)?;
 
       // Emit to frontend
       emit_state_update(&app, &mind_map)?;
