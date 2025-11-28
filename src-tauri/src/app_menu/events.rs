@@ -72,3 +72,20 @@ pub (crate) fn on_open<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
     }
   });
 }
+
+pub (crate) fn on_settings<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
+  println!("📂 Show settings menu item clicked");
+
+  if let Some(webview) = app_handle.get_webview_window("main") {
+    // Get the current URL and use it as a base
+    if let Ok(mut url) = webview.url() {
+      // Just change the path
+      url.set_path("/settings");
+
+      match webview.navigate(url) {
+        Ok(_) => println!("✅ Settings opened successfully"),
+        Err(e) => eprintln!("⚠️  Failed to open settings: {}", e)
+      }
+    }
+  }
+}

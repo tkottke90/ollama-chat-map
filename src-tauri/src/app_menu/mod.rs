@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::app_menu::events::{on_debug_viewport, on_new, on_open};
+use crate::app_menu::events::{on_debug_viewport, on_new, on_open, on_settings};
 use tauri::menu::{Menu, MenuBuilder, MenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 
@@ -68,6 +68,9 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
       }
       "open" => {
         on_open(app_handle);
+      }
+      "settings" => {
+        on_settings(app_handle);
       }
       _ => {} // Do nothing when there is no match
     }
