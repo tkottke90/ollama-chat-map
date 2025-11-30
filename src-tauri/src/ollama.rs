@@ -186,6 +186,7 @@ pub fn start_health_check_task<R: tauri::Runtime + 'static>(
 ) {
   use std::time::Duration;
   use tauri::Emitter;
+  use crate::app_menu;
 
   tauri::async_runtime::spawn(async move {
     // Small initial delay to let the app fully start
@@ -197,12 +198,16 @@ pub fn start_health_check_task<R: tauri::Runtime + 'static>(
     loop {
       interval.tick().await;
 
+      let config = app.state::<AppState>().get_ollama_config();
       let status = check_ollama_health(&app).await;
 
       // Emit status change event to frontend
       if let Err(e) = app.emit("ollama-status-changed", &status) {
         eprintln!("⚠️  Failed to emit ollama status event: {}", e);
       }
+
+      // Update tray menu with current config and status
+      app_menu::update_tray_ollama_info(&app, &config, &status);
 
       // Log only when status changes
       let availability_changed = last_available != Some(status.is_available);
