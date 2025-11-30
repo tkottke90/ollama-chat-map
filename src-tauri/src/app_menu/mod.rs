@@ -17,7 +17,7 @@ fn configure_tray<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
   let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
   let menu = Menu::with_items(app, &[&quit_i])?;
 
-  TrayIconBuilder::new()
+  TrayIconBuilder::with_id("main")
     .icon(app.default_window_icon().unwrap().clone())
     .menu(&menu)
     .show_menu_on_left_click(true)
