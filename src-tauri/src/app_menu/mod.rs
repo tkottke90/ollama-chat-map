@@ -2,7 +2,7 @@
 
 use crate::app_menu::events::{on_debug_viewport, on_new, on_open, on_settings};
 use crate::ollama::{OllamaConfig, OllamaStatus};
-use tauri::menu::{Menu, MenuBuilder, MenuItem, SubmenuBuilder, CheckMenuItemBuilder};
+use tauri::menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 
 mod events;
@@ -96,7 +96,7 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .separator()
     .text("settings", "Settings")
     .separator()
-    .text("quit", "Quit AI Mind Map")
+    .item(&PredefinedMenuItem::quit(app, Some("Quit AI Mind Map"))?)
     .build()?;
   
   let show_debug_viewport = CheckMenuItemBuilder::with_id("debugViewport", "Show Viewport Position")
@@ -106,7 +106,7 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
   let window_menu = SubmenuBuilder::new(app, "Window")
     .item(&show_debug_viewport)
     .separator()
-    .text("fullScreen", "Fullscreen")
+    .item(&PredefinedMenuItem::fullscreen(app, Some("Fullscreen"))?)
     .build()?;
 
 
