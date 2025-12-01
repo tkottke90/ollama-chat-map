@@ -1,15 +1,9 @@
 import {
-  ContextMenu,
-  ContextMenuCheckboxItem,
-  ContextMenuContent,
-  ContextMenuItem,
   ContextMenuRadioGroup,
   ContextMenuRadioItem,
-  ContextMenuSeparator,
   ContextMenuSub,
   ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger
+  ContextMenuSubTrigger
 } from "@/components/ui/context-menu";
 import { createChatHistory } from "@/lib/chat-parsing";
 import { EnterHandler } from "@/lib/events/keyboard";
@@ -18,7 +12,7 @@ import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { getOllamaStatus, OllamaStatus } from "@/lib/ollama.service";
 import { BaseProps } from "@/lib/utility-types";
 import { invoke } from "@tauri-apps/api/core";
-import { Handle, Node, Position, useReactFlow } from "@xyflow/react";
+import { Node, useReactFlow } from "@xyflow/react";
 import { MessageSquareText, SendHorizonal } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
@@ -26,11 +20,9 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatNodeData } from "../../lib/models/chat-node.data";
 import { GrabHandleVertical } from "../mouse-targets/grab-handles";
-import { BaseNode } from "./base.node";
+import { SimpleNode } from "./base.node";
 
 type LLMNodeProps = Node<ChatNodeData, "llm-prompt">;
-
-const onConnect = (params: unknown) => console.log("handle onConnect", params);
 
 /**
  * Creates a LLM Node Prompt Definition based on the schema
@@ -50,160 +42,72 @@ export function llmPromptNodeFactory(input: NodeDefinitionInput<ChatNodeData>): 
 
 export function LLMPromptNode(props: LLMNodeProps) {
   const [loading, setLoading] = useState(false);
-  const [models, setModels] = useState<OllamaStatus["models"]>([]);
-  const { updateNodeData, getNodes, getEdges, deleteElements } = useReactFlow();
-
-  // Listen for real-time Ollama status updates
-  const ollamaStatus = useTauriListener<OllamaStatus | null>("ollama-status-changed", null);
-
-  // Fetch initial Ollama status on mount
-  useEffect(() => {
-    getOllamaStatus().then((status) => setModels(status.models));
-  }, []);
-
-  // Update models when status changes via event
-  useEffect(() => {
-    if (ollamaStatus?.models) {
-      setModels(ollamaStatus.models);
-    }
-  }, [ollamaStatus]);
+  const { updateNodeData, getNodes, getEdges} = useReactFlow();
 
   return (
-    <BaseNode className="cursor-default group">
-      <Handle type="target" position={Position.Top} onConnect={onConnect} />
-      <Handle type="source" position={Position.Bottom} onConnect={onConnect} />
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className="node--text-input flex flex-col gap-4">
-            <Header {...props} />
+    <SimpleNode 
+      nodeProps={props}
+      customMenuItems={Menu}
+      onEdit={() => {
+        const currentState = ChatNodeData.toChatNodeData(props.data);
+        updateNodeData(props.id, currentState.editUserMessage(), { replace: true });
+      }}
+      onToggle={(key) => {
+        switch(key) {
+          case 'showDebug': {
+            const currentState = ChatNodeData.toChatNodeData(props.data);
+            updateNodeData(props.id, currentState.set("showDebug", !currentState.showDebug), { replace: true });
+          }
+        }
+      }}
+    >
+      <div className="node--text-input flex flex-col gap-4">
+        <Header {...props} />
 
-            <UserMessage
-              locked={props.data.locked}
-              message={props.data?.content ?? ""}
-              onChange={(msg: string) => {
-                const currentState = ChatNodeData.toChatNodeData({ ...props.data, content: msg });
+        <UserMessage
+          locked={props.data.locked}
+          message={props.data?.content ?? ""}
+          onChange={(msg: string) => {
+            const currentState = ChatNodeData.toChatNodeData({ ...props.data, content: msg });
 
-                updateNodeData(props.id, currentState, { replace: true });
-              }}
-              onSubmit ={async (value: string) => {
-                const currentState = ChatNodeData.toChatNodeData(props.data);
-
-                const nextState = currentState.addUserMessage(value);
-
-                try {
-                  // Step 1: Disable the input and show loading
-                  setLoading(true);
-
-                  // Step 2: Update the node data
-                  updateNodeData(props.id, nextState, { replace: true });
-
-                  const chatHistory = createChatHistory(props, getNodes(), getEdges()).concat(...nextState.toChatArray());
-
-                  // Step 4: Call Ollama
-                  const response = await invoke<{ role: string; content: string }>("ollama_chat", {
-                    model: props.data.model,
-                    messages: chatHistory,
-                  });
-
-                  updateNodeData(props.id, nextState.addAIMessage(response), { replace: true });
-                } catch (error) {
-                  console.error("AI error:", error);
-                  updateNodeData(props.id, nextState.editUserMessage(), { replace: true });
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            />
-
-            <AssistantResponse message={props.data.aiResponse?.content} loading={loading} />
-
-            <Debug {...props} />
-          </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger
-              disabled={!ollamaStatus?.isAvailable || props.data.locked}
-              className="disabled:text-zinc-300"
-            >
-              Model: {props.data.model}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              <ContextMenuRadioGroup
-                value={props.data.model}
-                onValueChange={(model) => {
-                  const currentState = ChatNodeData.toChatNodeData(props.data);
-                  updateNodeData(props.id, currentState.set("model", model), { replace: true });
-                }}
-              >
-                {models.map((model) => (
-                  <ContextMenuRadioItem key={model.name} value={model.name}>
-                    {model.name}
-                  </ContextMenuRadioItem>
-                ))}
-              </ContextMenuRadioGroup>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuItem
-            disabled={!props.data.locked}
-            onClick={() => {
-              const currentState = ChatNodeData.toChatNodeData(props.data);
-              updateNodeData(props.id, currentState.editUserMessage(), { replace: true });
-            }}
-          >
-            Edit
-          </ContextMenuItem>
-          <ContextMenuItem
-            variant="destructive"
-            onClick={() => {
-              deleteElements({
-                nodes: [{ id: props.id }]
-              });
-            }}
-          >
-            Delete
-          </ContextMenuItem>
-          <ContextMenuItem></ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuCheckboxItem checked={props.data.showDebug} onClick={() => {
+            updateNodeData(props.id, currentState, { replace: true });
+          }}
+          onSubmit ={async (value: string) => {
             const currentState = ChatNodeData.toChatNodeData(props.data);
 
-            updateNodeData(props.id, currentState.set("showDebug", !currentState.showDebug), { replace: true });
-          }}>
-            Show Debug
-          </ContextMenuCheckboxItem>
-        </ContextMenuContent>
-      </ContextMenu>
-    </BaseNode>
-  );
-}
+            const nextState = currentState.addUserMessage(value);
 
-function Header(props: LLMNodeProps) {
+            try {
+              // Step 1: Disable the input and show loading
+              setLoading(true);
 
-  return (
-    <div className="flex justify-between items-center">
-      <label htmlFor="text" className="font-bold text-lg nodrag flex items-center gap-2">
-        <MessageSquareText />
-        <span>Chat Message</span>
-        <span className="text-sm opacity-50">({props.data.model})</span>
-      </label>
-      <div className="flex w-fit justify-end gap-4">
-        <GrabHandleVertical className="drag-handle__custom" />
+              // Step 2: Update the node data
+              updateNodeData(props.id, nextState, { replace: true });
+
+              const chatHistory = createChatHistory(props, nextState.toChatArray(), getNodes(), getEdges());
+
+              // Step 4: Call Ollama
+              const response = await invoke<{ role: string; content: string }>("ollama_chat", {
+                model: props.data.model,
+                messages: chatHistory,
+              });
+
+              updateNodeData(props.id, nextState.addAIMessage(response), { replace: true });
+            } catch (error) {
+              console.error("AI error:", error);
+              updateNodeData(props.id, nextState.editUserMessage(), { replace: true });
+            } finally {
+              setLoading(false);
+            }
+          }}
+        />
+
+        <AssistantResponse message={props.data.aiResponse?.content} loading={loading} />
+
+        <Debug {...props} />
       </div>
-    </div>
-  )
-}
-
-function Debug(props: LLMNodeProps) {
-  if (!props.data.showDebug) return null;
-  
-  return (
-    <div className="absolute translate-x-full -translate-y-2 w-full transition-opacity duration-500 bg-blue-200 rounded p-4 border-blue-600 border opacity-0 group-hover:opacity-100">
-      <pre className="overflow-scroll">
-        <code>{JSON.stringify({...props.data, id: props.id}, null, 2)}</code>
-      </pre>
-    </div>
-  )
+    </SimpleNode>
+  );
 }
 
 function AssistantResponse({ message, loading }: BaseProps<{ message?: string, loading: boolean }>) {
@@ -228,6 +132,80 @@ function AssistantResponse({ message, loading }: BaseProps<{ message?: string, l
       </div>
     </Fragment>
   );
+}
+
+function Debug(props: LLMNodeProps) {
+  if (!props.data.showDebug) return null;
+  
+  return (
+    <div className="absolute translate-x-full -translate-y-2 w-full transition-opacity duration-500 bg-blue-200 rounded p-4 border-blue-600 border opacity-0 group-hover:opacity-100">
+      <pre className="overflow-scroll">
+        <code>{JSON.stringify({...props.data, id: props.id}, null, 2)}</code>
+      </pre>
+    </div>
+  )
+}
+
+function Header(props: LLMNodeProps) {
+
+  return (
+    <div className="flex justify-between items-center">
+      <label htmlFor="text" className="font-bold text-lg nodrag flex items-center gap-2">
+        <MessageSquareText />
+        <span>Chat Message</span>
+        <span className="text-sm opacity-50">({props.data.model})</span>
+      </label>
+      <div className="flex w-fit justify-end gap-4">
+        <GrabHandleVertical className="drag-handle__custom" />
+      </div>
+    </div>
+  )
+}
+
+function Menu(props: Node<ChatNodeData, string>) {
+  const [models, setModels] = useState<OllamaStatus["models"]>([]);
+  const { updateNodeData } = useReactFlow();
+
+  // Listen for real-time Ollama status updates
+  const ollamaStatus = useTauriListener<OllamaStatus | null>("ollama-status-changed", null);
+
+  // Fetch initial Ollama status on mount
+  useEffect(() => {
+    getOllamaStatus().then((status) => setModels(status.models));
+  }, []);
+
+  // Update models when status changes via event
+  useEffect(() => {
+    if (ollamaStatus?.models) {
+      setModels(ollamaStatus.models);
+    }
+  }, [ollamaStatus]);
+
+  return (
+    <ContextMenuSub>
+      <ContextMenuSubTrigger
+        disabled={!ollamaStatus?.isAvailable || props.data.locked}
+        className="disabled:text-zinc-300"
+      >
+        Model: {props.data.model}
+      </ContextMenuSubTrigger>
+      <ContextMenuSubContent>
+        <ContextMenuRadioGroup
+          value={props.data.model}
+          onValueChange={(model) => {
+            const currentState = ChatNodeData.toChatNodeData(props.data);
+            updateNodeData(props.id, currentState.set("model", model), { replace: true });
+          }}
+        >
+          {models.map((model) => (
+            <ContextMenuRadioItem key={model.name} value={model.name}>
+              {model.name}
+            </ContextMenuRadioItem>
+          ))}
+        </ContextMenuRadioGroup>
+      </ContextMenuSubContent>
+    </ContextMenuSub>
+  )
 }
 
 function UserMessage({ locked, message, onSubmit, onChange }: { locked: boolean; message: string; onSubmit: (value: string) => void, onChange?: (value: string) => void }) {

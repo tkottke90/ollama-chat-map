@@ -1,22 +1,17 @@
 import { Edge, getIncomers, Node } from "@xyflow/react";
-import { ChatNodeData } from "./models/chat-node.data";
+import { BaseChatNodeData } from "./models/base-node.data";
 import { ChatMessage } from "./types/conversation";
 
 
 
-export function createChatHistory(node: Node, nodes: Node[], edges: Edge[]) {
-  const parents = getIncomers(node, nodes, edges);
+export function createChatHistory(targetNode: Node, targetNodeChat: ChatMessage[], graphNodeArr: Node[], graphEdgeArr: Edge[]) {
+  const parents = getIncomers(targetNode, graphNodeArr, graphEdgeArr);
 
-  const chatArr: ChatMessage[] = []
+  const chatArr: ChatMessage[] = [...targetNodeChat]
 
   parents.forEach(parent => {
-    if (parent.data instanceof ChatNodeData) {
-
-      if (parent.data.userMessage)
-          chatArr.push(parent.data.userMessage)
-
-      if (parent.data.aiResponse) 
-        chatArr.push(parent.data.aiResponse)
+    if (parent.data instanceof BaseChatNodeData) {
+      return parent.data.toChatArray();
     }
   })
 

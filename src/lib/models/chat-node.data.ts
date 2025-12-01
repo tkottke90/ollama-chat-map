@@ -1,19 +1,6 @@
 import { MessageSquareText } from "lucide-preact";
 import { ChatMessage } from "../types/conversation";
-import { BaseNodeData } from "./base-node.data";
-
-
-export class BaseChatNodeData extends BaseNodeData {
-  model: string = 'mistral:7b';
-  content: string = '';
-
-  toChatMessage(): ChatMessage {
-    return {
-      role: 'user',
-      content: this.content
-    }
-  }
-}
+import { BaseChatNodeData } from "./base-node.data";
 
 export class ChatNodeData extends BaseChatNodeData {
   /**
@@ -34,6 +21,10 @@ export class ChatNodeData extends BaseChatNodeData {
   constructor(data?: Partial<ChatNodeData>) {
     super();
     Object.assign(this, data);
+  }
+
+  get userMessage() {
+    return this.toChatMessage();
   }
 
   /**

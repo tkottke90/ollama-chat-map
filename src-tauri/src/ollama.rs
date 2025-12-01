@@ -113,6 +113,7 @@ pub async fn ollama_chat(
         "user" => OllamaChatMessage::user(msg.content.clone()),
         "assistant" => OllamaChatMessage::assistant(msg.content.clone()),
         "system" => OllamaChatMessage::system(msg.content.clone()),
+        "tool" => OllamaChatMessage::tool(msg.content.clone()),
         _ => OllamaChatMessage::user(msg.content.clone()), // default to user
       }
     })

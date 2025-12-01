@@ -1,4 +1,4 @@
-import { llmPromptNodeFactory } from "@/components/nodes/llm-prompt.node";
+import Nodes from "@/components/nodes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FileText, MessageSquareText, SquarePlus } from "lucide-preact";
 import { useMindMapStateContext } from "../state";
@@ -21,11 +21,11 @@ export function AddNodeMenu() {
           <strong>Add Nodes</strong>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => {}} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => onAddNode(Nodes.textNodeFactory)} className="cursor-pointer">
           <FileText className={iconStyle} />
           <span>Text Node</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onAddNode(llmPromptNodeFactory)} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => onAddNode(Nodes.llmPromptNodeFactory)} className="cursor-pointer">
           <MessageSquareText className={iconStyle} />
           <span>Chat Message</span>
         </DropdownMenuItem>
