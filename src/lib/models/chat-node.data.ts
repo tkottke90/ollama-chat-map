@@ -3,7 +3,19 @@ import { ChatMessage } from "../types/conversation";
 import { BaseNodeData } from "./base-node.data";
 
 
-export class ChatNodeData extends BaseNodeData {
+export class BaseChatNodeData extends BaseNodeData {
+  model: string = 'mistral:7b';
+  content: string = '';
+
+  toChatMessage(): ChatMessage {
+    return {
+      role: 'user',
+      content: this.content
+    }
+  }
+}
+
+export class ChatNodeData extends BaseChatNodeData {
   /**
    * Controls if the node can be edited.  This is disabled after
    * the llm message is generated to maintain the conversational
@@ -11,11 +23,6 @@ export class ChatNodeData extends BaseNodeData {
    * message
    */
   locked: boolean = false;
-  
-  /**
-   * The message the user submitted to prompt the LLM
-   */
-  userMessage?: ChatMessage;
   
   /**
    * The AI's response to a users message
@@ -49,7 +56,7 @@ export class ChatNodeData extends BaseNodeData {
    */
   addUserMessage(message: string | ChatMessage) {
     this.locked = true;
-    this.userMessage = typeof message === 'string' ? { role: 'user', content: message } : message
+    this.content = typeof message === 'string' ? message : message.content;
 
     return this;
   }
@@ -77,7 +84,7 @@ export class ChatNodeData extends BaseNodeData {
    */
   toChatArray(): ChatMessage[] {
     return [
-      this.userMessage,
+      this.toChatMessage(),
       this.aiResponse
     ].filter(Boolean) as ChatMessage[];
   }

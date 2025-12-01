@@ -173,11 +173,22 @@
 
   .react-flow__node-default,
   .node {
-    @apply bg-card rounded-md p-8 w-[80vw] sm:w-[70ch];
+    @apply bg-card rounded-md p-8 w-[80vw] sm:w-[70ch] z-2;
 
     padding: 0.5rem;
 
     border-radius: 0.5rem;
+  }
+
+  /* Enable text selection on elements marked with nodrag */
+  .nodrag {
+    user-select: text;
+  }
+
+  /* Buttons should keep pointer cursor even with nodrag */
+  .nodrag button,
+  button.nodrag {
+    cursor: pointer;
   }
 
   .react-flow__handle {

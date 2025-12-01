@@ -15,7 +15,7 @@ interface ActionMenuProps extends BaseProps {}
 
 export function ActionsToolbar({}: ActionMenuProps) {
   return (
-    <Panel position="top-left" className="flex flex-col gap-2 h-fit">
+    <Panel position="top-left" className="flex flex-col gap-2 h-fit z-50">
       <ToolbarGroup>
         <FileDrawer />
       </ToolbarGroup>

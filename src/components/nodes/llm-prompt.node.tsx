@@ -1,11 +1,26 @@
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger
+} from "@/components/ui/context-menu";
 import { createChatHistory } from "@/lib/chat-parsing";
 import { EnterHandler } from "@/lib/events/keyboard";
+import { useTauriListener } from "@/lib/hooks/useTauriListener";
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
+import { getOllamaStatus, OllamaStatus } from "@/lib/ollama.service";
 import { BaseProps } from "@/lib/utility-types";
 import { invoke } from "@tauri-apps/api/core";
 import { Handle, Node, Position, useReactFlow } from "@xyflow/react";
 import { Code2, MessageSquareText, Pencil, SendHorizonal } from "lucide-preact";
-import { useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -31,6 +46,195 @@ export function llmPromptNodeFactory(input: NodeDefinitionInput<ChatNodeData>): 
     ...input,
     data: new ChatNodeData(input.data),
   };
+}
+
+export function LLMPromptNode(props: LLMNodeProps) {
+  const [loading, setLoading] = useState(false);
+  const [models, setModels] = useState<OllamaStatus["models"]>([]);
+  const { updateNodeData, getNodes, getEdges } = useReactFlow();
+
+  // Listen for real-time Ollama status updates
+  const ollamaStatus = useTauriListener<OllamaStatus | null>("ollama-status-changed", null);
+
+  // Fetch initial Ollama status on mount
+  useEffect(() => {
+    getOllamaStatus().then((status) => setModels(status.models));
+  }, []);
+
+  // Update models when status changes via event
+  useEffect(() => {
+    if (ollamaStatus?.models) {
+      setModels(ollamaStatus.models);
+    }
+  }, [ollamaStatus]);
+
+  return (
+    <BaseNode className="cursor-default group">
+      <Handle type="target" position={Position.Top} onConnect={onConnect} />
+      <Handle type="source" position={Position.Bottom} onConnect={onConnect} />
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="node--text-input flex flex-col gap-4">
+            <Header {...props} />
+
+            <UserMessage
+              locked={props.data.locked}
+              message={props.data?.content ?? ""}
+              onChange={(msg: string) => {
+                const currentState = ChatNodeData.toChatNodeData({ ...props.data, content: msg });
+
+                updateNodeData(props.id, currentState, { replace: true });
+              }}
+              onSubmit ={async (value: string) => {
+                const currentState = ChatNodeData.toChatNodeData(props.data);
+
+                const nextState = currentState.addUserMessage(value);
+
+                try {
+                  // Step 1: Disable the input and show loading
+                  setLoading(true);
+
+                  // Step 2: Update the node data
+                  updateNodeData(props.id, nextState, { replace: true });
+
+                  const chatHistory = createChatHistory(props, getNodes(), getEdges()).concat(...nextState.toChatArray());
+
+                  // Step 4: Call Ollama
+                  const response = await invoke<{ role: string; content: string }>("ollama_chat", {
+                    model: props.data.model,
+                    messages: chatHistory,
+                  });
+
+                  updateNodeData(props.id, nextState.addAIMessage(response), { replace: true });
+                } catch (error) {
+                  console.error("AI error:", error);
+                  updateNodeData(props.id, nextState.editUserMessage(), { replace: true });
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            />
+
+            <AssistantResponse message={props.data.aiResponse?.content} loading={loading} />
+
+            <Debug {...props} />
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger
+              disabled={!ollamaStatus?.isAvailable || props.data.locked}
+              className="disabled:text-zinc-300"
+            >
+              Model: {props.data.model}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              <ContextMenuRadioGroup
+                value={props.data.model}
+                onValueChange={(model) => {
+                  const currentState = ChatNodeData.toChatNodeData(props.data);
+                  updateNodeData(props.id, currentState.set("model", model), { replace: true });
+                }}
+              >
+                {models.map((model) => (
+                  <ContextMenuRadioItem key={model.name} value={model.name}>
+                    {model.name}
+                  </ContextMenuRadioItem>
+                ))}
+              </ContextMenuRadioGroup>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuItem disabled={!props.data.locked}>Edit</ContextMenuItem>
+          <ContextMenuItem variant="destructive">Delete</ContextMenuItem>
+          <ContextMenuItem></ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuCheckboxItem checked={props.data.showDebug} onClick={() => {
+            const currentState = ChatNodeData.toChatNodeData(props.data);
+
+            updateNodeData(props.id, currentState.set("showDebug", !currentState.showDebug), { replace: true });
+          }}>
+            Show Debug
+          </ContextMenuCheckboxItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </BaseNode>
+  );
+}
+
+function Header(props: LLMNodeProps) {
+  const { updateNodeData } = useReactFlow();
+
+  return (
+    <div className="flex justify-between items-center">
+      <label htmlFor="text" className="font-bold text-lg nodrag flex items-center gap-2">
+        <MessageSquareText />
+        <span>Chat Message</span>
+        <span className="text-sm opacity-50">({props.data.model})</span>
+      </label>
+      <div className="flex w-fit justify-end gap-4">
+        <button
+          disabled={!props.data.locked}
+          className="nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-default"
+          onClick={() => {
+            const currentState = ChatNodeData.toChatNodeData(props.data);
+
+            updateNodeData(props.id, currentState.editUserMessage(), { replace: true });
+          }}
+        >
+          <Pencil width={16} />
+        </button>
+
+        <button
+          className={`nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer ${props.data.showDebug ? "bg-blue-500 hover:bg-blue:600" : ""}`}
+          onClick={() => {
+            const currentState = ChatNodeData.toChatNodeData(props.data);
+
+            updateNodeData(props.id, currentState.set("showDebug", !currentState.showDebug), { replace: true });
+          }}
+        >
+          <Code2 width={16} />
+        </button>
+
+        <GrabHandleVertical className="drag-handle__custom" />
+      </div>
+    </div>
+  )
+}
+
+function Debug(props: LLMNodeProps) {
+  if (!props.data.showDebug) return null;
+  
+  return (
+    <div className="absolute translate-x-full -translate-y-2 w-full transition-opacity duration-500 bg-blue-200 rounded p-4 border-blue-600 border opacity-0 group-hover:opacity-100">
+      <pre className="overflow-scroll">
+        <code>{JSON.stringify({...props.data, id: props.id}, null, 2)}</code>
+      </pre>
+    </div>
+  )
+}
+
+function AssistantResponse({ message, loading }: BaseProps<{ message?: string, loading: boolean }>) {
+  if (loading) {
+    return (
+      <Fragment>
+        <hr />
+        <p className="text-center animate-bounce mt-2">Loading</p>
+      </Fragment>
+    );
+  }
+  
+  if (!message) return null;
+
+  return (
+    <Fragment>
+      <hr />
+      <h4 className="nodrag font-bold">Assistant:</h4>
+
+      <div className="nodrag prose orderList unorderList list select-text">
+        <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+      </div>
+    </Fragment>
+  );
 }
 
 function UserMessage({ locked, message, onSubmit, onChange }: { locked: boolean; message: string; onSubmit: (value: string) => void, onChange?: (value: string) => void }) {
@@ -72,129 +276,8 @@ function UserMessage({ locked, message, onSubmit, onChange }: { locked: boolean;
   }
 
   return (
-    <div className="nodrag prose orderList unorderList list">
+    <div className="nodrag prose orderList unorderList list select-text">
       <Markdown>{message}</Markdown>
     </div>
   )
-}
-
-function AssistantThinking({ loading }: BaseProps<{ loading: boolean }>) {
-  if (!loading) return null;
-
-  return <p className="text-center animate-bounce mt-2">Loading</p>;
-}
-
-function AssistantResponse({ message }: BaseProps<{ message?: string }>) {
-  if (!message) return null;
-
-  return (
-    <Fragment>
-      <h4 className="nodrag font-bold">Assistant:</h4>
-
-      <div className="nodrag prose orderList unorderList list">
-        <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
-      </div>
-    </Fragment>
-  );
-}
-
-export function LLMPromptNode(props: LLMNodeProps) {
-  const [loading, setLoading] = useState(false);
-  const { updateNodeData, getNodes, getEdges } = useReactFlow();
-
-  return (
-    <BaseNode className="cursor-default group">
-      <Handle type="target" position={Position.Top} onConnect={onConnect} />
-      <Handle type="source" position={Position.Bottom} onConnect={onConnect} />
-      <div className="node--text-input flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <label htmlFor="text" className="font-bold text-lg nodrag flex gap-2">
-            <MessageSquareText />
-            <span>Chat Message</span>
-          </label>
-          <div className="flex w-fit justify-end gap-4">
-            <button
-              disabled={!props.data.locked}
-              className="nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-default"
-              onClick={() => {
-                const currentState = ChatNodeData.toChatNodeData(props.data);
-                const nextState = currentState.editUserMessage();
-
-                updateNodeData(props.id, nextState, { replace: true });
-              }}
-            >
-              <Pencil width={16} />
-            </button>
-
-            <button
-              className={`nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer ${props.data.showDebug ? "bg-blue-500 hover:bg-blue:600" : ""}`}
-              onClick={() => {
-                const currentState = ChatNodeData.toChatNodeData(props.data);
-                const nextState = currentState.set("showDebug", !currentState.showDebug);
-
-                updateNodeData(props.id, nextState, { replace: true });
-              }}
-            >
-              <Code2 width={16} />
-            </button>
-
-            <GrabHandleVertical className="drag-handle__custom" />
-          </div>
-        </div>
-
-        <UserMessage
-          locked={props.data.locked}
-          message={props.data.userMessage?.content ?? ""}
-          onChange={(msg: string) => {
-            const currentState = ChatNodeData.toChatNodeData(props.data);
-            currentState.userMessage = { role: 'user', content: msg };
-
-            updateNodeData(props.id, currentState, { replace: true });
-          }}
-          onSubmit ={async (value: string) => {
-            const currentState = ChatNodeData.toChatNodeData(props.data);
-
-            const nextState = currentState.addUserMessage(value);
-
-            try {
-              // Step 1: Disable the input and show loading
-              setLoading(true);
-
-              // Step 2: Update the node data
-              updateNodeData(props.id, nextState, { replace: true });
-
-              const chatHistory = createChatHistory(props, getNodes(), getEdges()).concat(...nextState.toChatArray());
-
-              // Step 4: Call Ollama
-              const response = await invoke<{ role: string; content: string }>("ollama_chat", {
-                model: "llama2",
-                messages: chatHistory,
-              });
-
-              updateNodeData(props.id, nextState.addAIMessage(response), { replace: true });
-            } catch (error) {
-              console.error("AI error:", error);
-              updateNodeData(props.id, nextState.editUserMessage(), { replace: true });
-            } finally {
-              setLoading(false);
-            }
-          }}
-        />
-
-        {loading || (props.data.aiResponse?.content && <hr />)}
-
-        <AssistantThinking loading={loading} />
-
-        <AssistantResponse message={props.data.aiResponse?.content} />
-
-        {props.data.showDebug && (
-          <div className="absolute translate-x-full -translate-y-2 w-full transition-opacity duration-500 bg-blue-200 rounded p-4 border-blue-600 border opacity-0 group-hover:opacity-100">
-            <pre className="overflow-scroll">
-              <code>{JSON.stringify({...props.data, id: props.id}, null, 2)}</code>
-            </pre>
-          </div>
-        )}
-      </div>
-    </BaseNode>
-  );
 }
