@@ -19,7 +19,7 @@ import { getOllamaStatus, OllamaStatus } from "@/lib/ollama.service";
 import { BaseProps } from "@/lib/utility-types";
 import { invoke } from "@tauri-apps/api/core";
 import { Handle, Node, Position, useReactFlow } from "@xyflow/react";
-import { Code2, MessageSquareText, Pencil, SendHorizonal } from "lucide-preact";
+import { MessageSquareText, SendHorizonal } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import Markdown from "react-markdown";
@@ -51,7 +51,7 @@ export function llmPromptNodeFactory(input: NodeDefinitionInput<ChatNodeData>): 
 export function LLMPromptNode(props: LLMNodeProps) {
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<OllamaStatus["models"]>([]);
-  const { updateNodeData, getNodes, getEdges } = useReactFlow();
+  const { updateNodeData, getNodes, getEdges, deleteElements } = useReactFlow();
 
   // Listen for real-time Ollama status updates
   const ollamaStatus = useTauriListener<OllamaStatus | null>("ollama-status-changed", null);
@@ -144,8 +144,25 @@ export function LLMPromptNode(props: LLMNodeProps) {
               </ContextMenuRadioGroup>
             </ContextMenuSubContent>
           </ContextMenuSub>
-          <ContextMenuItem disabled={!props.data.locked}>Edit</ContextMenuItem>
-          <ContextMenuItem variant="destructive">Delete</ContextMenuItem>
+          <ContextMenuItem
+            disabled={!props.data.locked}
+            onClick={() => {
+              const currentState = ChatNodeData.toChatNodeData(props.data);
+              updateNodeData(props.id, currentState.editUserMessage(), { replace: true });
+            }}
+          >
+            Edit
+          </ContextMenuItem>
+          <ContextMenuItem
+            variant="destructive"
+            onClick={() => {
+              deleteElements({
+                nodes: [{ id: props.id }]
+              });
+            }}
+          >
+            Delete
+          </ContextMenuItem>
           <ContextMenuItem></ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuCheckboxItem checked={props.data.showDebug} onClick={() => {
@@ -162,7 +179,6 @@ export function LLMPromptNode(props: LLMNodeProps) {
 }
 
 function Header(props: LLMNodeProps) {
-  const { updateNodeData } = useReactFlow();
 
   return (
     <div className="flex justify-between items-center">
@@ -172,29 +188,6 @@ function Header(props: LLMNodeProps) {
         <span className="text-sm opacity-50">({props.data.model})</span>
       </label>
       <div className="flex w-fit justify-end gap-4">
-        <button
-          disabled={!props.data.locked}
-          className="nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-default"
-          onClick={() => {
-            const currentState = ChatNodeData.toChatNodeData(props.data);
-
-            updateNodeData(props.id, currentState.editUserMessage(), { replace: true });
-          }}
-        >
-          <Pencil width={16} />
-        </button>
-
-        <button
-          className={`nodrag rounded-full hover:bg-zinc-400 w-8 h-8 flex items-center justify-center cursor-pointer ${props.data.showDebug ? "bg-blue-500 hover:bg-blue:600" : ""}`}
-          onClick={() => {
-            const currentState = ChatNodeData.toChatNodeData(props.data);
-
-            updateNodeData(props.id, currentState.set("showDebug", !currentState.showDebug), { replace: true });
-          }}
-        >
-          <Code2 width={16} />
-        </button>
-
         <GrabHandleVertical className="drag-handle__custom" />
       </div>
     </div>
