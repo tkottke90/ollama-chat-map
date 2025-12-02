@@ -1,5 +1,11 @@
 use tauri::Manager;
 
+pub mod text_files;
+pub mod commands;
+
+pub use text_files::load_text_file;
+
+
 pub fn build_config_path<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<std::path::PathBuf, String> {
   app.path().app_data_dir()
     .map_err(|e| format!("Failed to get app data directory: {}", e))

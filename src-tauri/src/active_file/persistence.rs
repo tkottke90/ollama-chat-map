@@ -1,6 +1,6 @@
 // Persistence layer - handles reading and writing to disk
 use super::types::{ActiveFileState, MindMap, SavingStatePayload};
-use crate::active_file::files;
+use crate::files;
 
 /// Load ActiveFileState from disk
 pub(crate) fn load_active_file_state<R: tauri::Runtime>(
@@ -13,15 +13,14 @@ pub(crate) fn load_active_file_state<R: tauri::Runtime>(
   // Build file path for the state file
   let state_file_path = app_data_dir.join("active_file_state.json");
 
-  // Check if file exists
+  // Check if file exists - return default if not found
   if !state_file_path.exists() {
     println!("No existing ActiveFileState file found, using default");
     return Ok(ActiveFileState::default());
   }
 
-  // Read the file
-  let json_string = std::fs::read_to_string(&state_file_path)
-    .map_err(|e| format!("Failed to read ActiveFileState file: {}", e))?;
+  // Read the file using the shared load_text_file function
+  let json_string = files::load_text_file(&state_file_path)?;
 
   // Deserialize from JSON
   let state: ActiveFileState = serde_json::from_str(&json_string)
@@ -42,13 +41,10 @@ pub(crate) fn load_mind_map_from_disk<R: tauri::Runtime>(
 
   let file_path = app_data_dir.join(file_name);
 
-  if !file_path.exists() {
-    return Err(format!("Mind map file not found: {:?}", file_path));
-  }
+  // Read the file using the shared load_text_file function
+  let json_string = files::load_text_file(&file_path)?;
 
-  let json_string = std::fs::read_to_string(&file_path)
-    .map_err(|e| format!("Failed to read mind map file: {}", e))?;
-
+  // Deserialize from JSON
   let mind_map: MindMap = serde_json::from_str(&json_string)
     .map_err(|e| format!("Failed to deserialize mind map: {}", e))?;
 

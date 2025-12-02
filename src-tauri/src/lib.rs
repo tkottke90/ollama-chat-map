@@ -9,13 +9,6 @@ use tauri::{Builder, Manager};
 pub use state::AppState;
 use state::load_app_state;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     Builder::default()
@@ -39,20 +32,20 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
-            greet,
-            ollama::ollama_chat,
-            ollama::get_ollama_config,
-            ollama::set_ollama_config,
-            ollama::get_ollama_status,
+            active_file::commands::create_mind_map,
+            active_file::commands::flush_mind_map,
             active_file::commands::get_mind_map,
             active_file::commands::get_save_state,
             active_file::commands::load_mind_map,
+            active_file::commands::open_file_dialog,
             active_file::commands::save_mind_map,
-            active_file::commands::create_mind_map,
-            active_file::commands::update_nodes,
             active_file::commands::update_edges,
-            active_file::commands::flush_mind_map,
-            active_file::commands::open_file_dialog
+            active_file::commands::update_nodes,
+            files::commands::load_txt_file,
+            ollama::get_ollama_config,
+            ollama::get_ollama_status,
+            ollama::ollama_chat,
+            ollama::set_ollama_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
