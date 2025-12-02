@@ -100,6 +100,12 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .separator()
     .item(&PredefinedMenuItem::quit(app, Some("Quit AI Mind Map"))?)
     .build()?;
+
+
+  let edit_menu = SubmenuBuilder::new(app, "Edit")
+    .item(&PredefinedMenuItem::copy(app, Some("Copy"))?)
+    .item(&PredefinedMenuItem::paste(app, Some("Paste"))?)
+    .build()?;
   
   let show_debug_viewport = CheckMenuItemBuilder::with_id("debugViewport", "Show Viewport Position")
     .checked(false)
@@ -113,7 +119,7 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
 
 
   let menu = MenuBuilder::new(handle)
-    .items(&[&default_menu, &window_menu])
+    .items(&[&default_menu, &edit_menu, &window_menu])
     .build()?;
 
   app.set_menu(menu)?;
