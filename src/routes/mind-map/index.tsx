@@ -24,7 +24,7 @@ const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
 function ReactFlowCanvas() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, StateContext, onDelete } = useMindMapState(
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, StateContext, onDelete, isValidConnection } = useMindMapState(
     initialNodes,
     initialEdges
   );
@@ -43,6 +43,7 @@ function ReactFlowCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDelete={onDelete}
+        isValidConnection={isValidConnection}
       >
         <Background />
         <ActionsToolbar />

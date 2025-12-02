@@ -6,8 +6,9 @@ import { MindMap } from "@/lib/types/mind-map";
 import { BaseProps, Nullable } from "@/lib/utility-types";
 import { createContextWithHook } from "@/lib/utils";
 import { invoke } from "@tauri-apps/api/core";
-import { addEdge, Connection, Edge, EdgeChange, Node, NodeChange, OnDelete, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
+import { addEdge, Connection, Edge, EdgeChange, getOutgoers, Node, NodeChange, OnDelete, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useState } from "preact/hooks";
+import { toast } from "sonner";
 
 export type AddNodeFn = (input: NodeDefinitionInput<any>) => Node;
 export type AddNodeFactory = (factory: AddNodeFn) => void;
@@ -143,6 +144,38 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
     setEdges((prev) => prev.concat(...newEdges));
   }, []);
 
+  const isValidConnection = useCallback(
+    (connection: Edge | Connection) => {
+      // we are using getNodes and getEdges helpers here
+      // to make sure we create isValidConnection function only once
+      const nodes = getNodes();
+      const edges = getEdges();
+      const target = nodes.find((node) => node.id === connection.target);
+
+      // If we do not have a target, we cannot check
+      // for the circular dependency
+      if (!target) return false;
+
+      // We do not allow self-connections
+      if (target.id === connection.source) {
+        toast.warning('Nodes can not connect to themselves');
+        return false;
+      }
+
+      // Loop over the downstream nodes from the current node
+      for (const node of getOutgoers(target, nodes, edges)) {
+        // If we find a node that is the same as the source, we have a cycle
+        if (node.id === connection.source) {
+          return false;
+        }
+      }
+
+      // If no cycle is detected, then we can connect the nodes
+      return true;
+    },
+    [getNodes, getEdges],
+  );
+
   /**
    * Context for the mind map state
    */
@@ -212,6 +245,7 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
   return {
     nodes,
     edges,
+    isValidConnection,
     onAddNode,
     onConnect,
     onDelete,
