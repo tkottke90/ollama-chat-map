@@ -16,7 +16,8 @@ export class ChatNodeData extends BaseChatNodeData {
    */
   aiResponse?: ChatMessage;
 
-  icon = MessageSquareText
+  label = 'Chat Message';
+  icon = MessageSquareText;
 
   constructor(data?: Partial<ChatNodeData>) {
     super();

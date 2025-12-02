@@ -6,6 +6,7 @@ import { ChatMessage } from "../types/conversation";
 export class BaseNodeData {
   [key: string]: unknown;
 
+  label: string = 'Node'
   icon: LucideIcon = Orbit
   showDebug = false;
   direction: 'TB' | 'LR' = 'TB'
