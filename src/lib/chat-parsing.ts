@@ -9,9 +9,11 @@ export function createChatHistory(targetNode: Node, targetNodeChat: ChatMessage[
 
   const chatArr: ChatMessage[] = [...targetNodeChat]
 
+  console.dir(parents)
+
   parents.forEach(parent => {
     if (parent.data instanceof BaseChatNodeData) {
-      return parent.data.toChatArray();
+      chatArr.push(...parent.data.toChatArray());
     }
   })
 

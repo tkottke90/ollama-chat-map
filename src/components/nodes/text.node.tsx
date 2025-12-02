@@ -1,6 +1,7 @@
+import { ChangeHandler } from "@/lib/events/input";
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { TextNodeData } from "@/lib/models/text-node.data";
-import { Node } from "@xyflow/react";
+import { Node, useReactFlow } from "@xyflow/react";
 import { SimpleNode } from "./base.node";
 
 type TextNodeProps = Node<TextNodeData, "text-node">;
@@ -22,13 +23,25 @@ export function textNodeFactory(input: NodeDefinitionInput<TextNodeData>): TextN
 
 
 export function TextNode(props: TextNodeProps) {
-
+  const { updateNodeData } = useReactFlow();
 
   return (
-    <SimpleNode nodeProps={props}>
+    <SimpleNode
+      nodeProps={props}
+      onToggle={(key) => {
+        switch(key) {
+          case 'showDebug': {
+            const nextState = new TextNodeData(props.data);
+            nextState.showDebug = !nextState.showDebug;
+
+            updateNodeData(props.id, nextState, { replace: true });
+          }
+        }
+      }}  
+    >
       <div className="node--text-input flex flex-col gap-4">
         <Header {...props} />
-        
+
         <DataInput {...props} />
       </div>
     </SimpleNode>
@@ -48,7 +61,7 @@ function Header(props: TextNodeProps) {
 }
 
 function DataInput(props: TextNodeProps) {
-
+  const { updateNodeData } = useReactFlow();
 
   return (
     <div className="flex gap-2 nodrag">
@@ -57,6 +70,12 @@ function DataInput(props: TextNodeProps) {
           name="text"
           defaultValue={props.data.content}
           className="nodrag noscroll nowheel w-full rounded-md grow"
+          onChange={ChangeHandler((value) => {
+            const nextState = new TextNodeData(props.data);
+            nextState.content = value;
+
+            updateNodeData(props.id, nextState, { replace: true });
+          })}
         />
     </div>
   )
