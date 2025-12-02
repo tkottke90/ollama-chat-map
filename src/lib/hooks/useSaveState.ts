@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "preact/hooks";
+import { toast } from "sonner";
 import { useTauriListener } from "./useTauriListener";
 
 export enum SavingStates {
@@ -43,6 +44,7 @@ export function useSaveState(
 
     await invoke('flush_mind_map');
 
+    toast.success('Mind Map Saved Successfully', { duration: 2000 })
     markSaved();
   }, [savingState, stateEvents, markSaved]);
 

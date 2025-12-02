@@ -1,4 +1,5 @@
 import { ErrorBoundary, LocationProvider, Route, Router } from 'preact-iso';
+import { Toaster } from 'sonner';
 import "./App.css";
 import { FileList } from "./routes/file-list/index";
 import { MindMap } from "./routes/mind-map/index";
@@ -17,6 +18,7 @@ function App() {
             <Route path="/settings" component={SettingsPage} />
           </Router>
         </main>
+        <Toaster position="bottom-right" richColors />
       </ErrorBoundary>
     </LocationProvider>
   );
