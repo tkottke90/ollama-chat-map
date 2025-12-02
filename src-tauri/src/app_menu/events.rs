@@ -73,6 +73,22 @@ pub (crate) fn on_open<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
   });
 }
 
+pub (crate) fn on_save<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
+  println!("💾 Save menu item clicked");
+
+  use crate::active_file::commands::flush_mind_map;
+
+  // Get the manager state from the app handle
+  let manager = app_handle.state::<MindMapManager>();
+
+  // Call flush_mind_map to save the cached mind map to disk
+  // This will emit saving events to update the frontend automatically
+  match flush_mind_map(manager, app_handle.clone()) {
+    Ok(_) => println!("✅ File saved successfully"),
+    Err(e) => eprintln!("⚠️  Failed to save file: {}", e),
+  }
+}
+
 pub (crate) fn on_settings<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
   println!("📂 Show settings menu item clicked");
 

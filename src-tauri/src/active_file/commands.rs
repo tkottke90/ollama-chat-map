@@ -203,9 +203,9 @@ pub fn save_mind_map(
 
 /// Tauri command to flush the current active mind map to disk
 #[tauri::command]
-pub fn flush_mind_map(
+pub fn flush_mind_map<R: tauri::Runtime>(
   manager: State<'_, MindMapManager>,
-  app: AppHandle
+  app: AppHandle<R>
 ) -> Result<(), String> {
   // Emit saving started event
   app.emit("aiMindMap://mindMap/saving", SavingStatePayload { is_saving: true })

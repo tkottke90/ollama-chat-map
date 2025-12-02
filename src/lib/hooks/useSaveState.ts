@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import { useTauriListener } from "./useTauriListener";
 
 export enum SavingStates {
@@ -45,6 +45,10 @@ export function useSaveState(
 
     markSaved();
   }, [savingState, stateEvents, markSaved]);
+
+  useEffect(() => {
+    if (!savingState.isSaving) markSaved()
+  }, [savingState])
 
   return {
     markUnsaved,

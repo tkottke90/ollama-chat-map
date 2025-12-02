@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::app_menu::events::{on_debug_viewport, on_new, on_open, on_settings};
+use crate::app_menu::events::{on_debug_viewport, on_new, on_open, on_save, on_settings};
 use crate::ollama::{OllamaConfig, OllamaStatus};
 use tauri::menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
@@ -89,10 +89,12 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
 
   let new_item = MenuItem::with_id(app, "new", "New", true, Some("CmdOrCtrl+N"))?;
   let open_item = MenuItem::with_id(app, "open", "Open", true, Some("CmdOrCtrl+O"))?;
+  let save_item = MenuItem::with_id(app, "save", "Save", true, Some("CmdOrCtrl+S"))?;
 
   let default_menu = SubmenuBuilder::new(app, "default")
     .item(&new_item)
     .item(&open_item)
+    .item(&save_item)
     .separator()
     .text("settings", "Settings")
     .separator()
@@ -126,6 +128,9 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
       }
       "open" => {
         on_open(app_handle);
+      }
+      "save" => {
+        on_save(app_handle);
       }
       "settings" => {
         on_settings(app_handle);
