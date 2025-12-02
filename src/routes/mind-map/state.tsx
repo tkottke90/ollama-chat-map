@@ -21,7 +21,7 @@ const { useHook, Provider } = createContextWithHook<{
 }>();
 
 export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] = []) {
-  const { getNodes, getEdges, toObject } = useReactFlow();
+  const { getNodes, getEdges, toObject, getViewport } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -93,29 +93,47 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
    * Callback for when nodes are added
    */
   const onAddNode = useCallback((nodeFactory: AddNodeFn) => {
-    // Get the position of the last node
-    const nodes = getNodes();
-    const lastNode = nodes.at(-1);
+    // Create a default position
+    const nextPos = { x: 0, y: 0};
 
-    // Create next node position 100 below the last node
-    const pos = {
-      x: lastNode?.position.x ?? 0,
-      y: (lastNode?.position.y ?? 0) + (lastNode?.measured?.height ?? 0) + 50,
-    };
+    // Check for nodes that are selected.  This is used for positioning
+    // and auto-generating edges
+    const selected = getNodes().filter(node => node.selected);
+
+    if (selected) { // If there are selected nodes
+      // Get the max bottom position from all selected elements
+      // by calculating it's y position plus it's height.  This gives
+      // us the bottom of the node so we do not overlap with other nodes
+      const maxY = Math.max(
+        ...selected.map(node => node.position.y + (node.measured?.height ?? 0))
+      );
+
+      nextPos.y = maxY + 50;
+
+      // Get the median x position of each node by calculating
+      // its current X position plus 1/2 of its width.  This gives
+      // us the middle of node in the X Direction
+      const xPositions = selected.map(node => node.position.x)
+
+      // Calculate the median X position
+      const medianXPos = xPositions.reduce((acc, val) => acc + val, 0) / xPositions.length;
+
+      nextPos.x = medianXPos;
+    } else { // Else add it to the middle of the current viewport
+      // Get the window dimensions
+      const clientRect = document.body.getBoundingClientRect()
+      
+      // Add to the middle of the current viewport
+      const viewPort = getViewport();
+      nextPos.x = viewPort.x + clientRect.width / 2;
+      nextPos.y = viewPort.y + clientRect.height / 2;
+    }
 
     // Create new node
-    const newNode = nodeFactory({ showDebug: false, position: pos });
-
-    // Check if we have a selectedNode
-    const selected = getNodes();
+    const newNode = nodeFactory({ showDebug: false, position: nextPos });
 
     // Create edges
     const newEdges: Edge[] = selected
-      .filter(
-        (node) =>
-          // Find nodes that are selected
-          node.selected
-      )
       .map((node) => ({
         id: crypto.randomUUID(),
         source: node.id,
