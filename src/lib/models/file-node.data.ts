@@ -7,6 +7,7 @@ export class FileNodeData extends BaseChatNodeData {
   label = 'File Node'
   icon: LucideIcon = File;
 
+  locked: boolean = false;
   file?: string;
 
   constructor(data?: Partial<FileNodeData>) {
@@ -17,6 +18,7 @@ export class FileNodeData extends BaseChatNodeData {
   async clearFile() {
     this.file = undefined;
     this.content = '';
+    this.locked = false;
   }
 
   async loadFile(filename: string) {
@@ -24,5 +26,6 @@ export class FileNodeData extends BaseChatNodeData {
 
     this.file = filename;
     this.content = data;
+    this.locked = true;
   }
 }

@@ -1,19 +1,17 @@
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { FileNodeData } from "@/lib/models/file-node.data";
+import { AccordionItem } from "@radix-ui/react-accordion";
 import { open } from '@tauri-apps/plugin-dialog';
 import { Node, useReactFlow } from "@xyflow/react";
 import { useMemo, useState } from "preact/hooks";
+import { Fragment } from "preact/jsx-runtime";
+import { MarkdownDisplay } from "../markdown";
+import { Small } from "../small";
+import { Accordion, AccordionContent, AccordionTrigger } from "../ui/accordion";
 import { Button } from "../ui/button";
 import { SimpleNode } from "./base.node";
 
-const ACCEPTED_MIME_TYPES = ["text/*"]
 const ACCEPTED_EXTENSIONS = [".txt", ".json", ".js", ".ts", ".jsx", ".tsx", ".md", ".yml", ".yaml", ".xml", ".html", ".css", ".scss", ".py", ".rb", ".rs", ".go", ".java", ".c", ".cpp", ".h", ".sh", ".bash", ".zsh"]
-
-const ACCEPTED_FILE_TYPES = [...ACCEPTED_MIME_TYPES, ...ACCEPTED_EXTENSIONS].join(', ')
-
-function isFileTypeAllowed(file: File) {
-  return ACCEPTED_MIME_TYPES.includes(file.type) || ACCEPTED_EXTENSIONS.some(ext => file.name.endsWith(ext))
-}
 
 type FileNodeProps = Node<FileNodeData, "file-node">;
 
@@ -39,6 +37,12 @@ export function FileNode(props: FileNodeProps) {
   return (
     <SimpleNode
       nodeProps={props}
+      onEdit={() => {
+        const nextState = new FileNodeData(props.data);
+        nextState.clearFile();
+
+        updateNodeData(props.id, nextState, { replace: true });
+      }}
       onToggle={(key) => {
         switch(key) {
           case 'showDebug': {
@@ -66,6 +70,7 @@ function Header(props: FileNodeProps) {
       <label htmlFor="text" className="font-bold text-lg flex items-center gap-2">
         <props.data.icon /> 
         <span>File</span>
+        { props.data.file && <Small>({props.data.file})</Small> }
       </label>
     </div>
   )
@@ -76,6 +81,22 @@ function DataInput(props: FileNodeProps) {
   const inputId = useMemo(() => { return props.id + '-file' }, [props])
 
   const { updateNodeData } = useReactFlow();
+
+  if (props.data.file) {
+    return (
+      <Fragment>
+        <hr />
+        <Accordion type="single" collapsible className="w-full nodrag">
+          <AccordionItem value="markdown-content" className="group">
+            <AccordionTrigger className="w-full flex justify-between text-zinc-800">{props.data.file.split(/[\\\/]/).at(-1)}</AccordionTrigger>
+            <AccordionContent className="overflow-x-auto">
+              <MarkdownDisplay>{props.data.content}</MarkdownDisplay>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Fragment>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2 nodrag">
@@ -95,7 +116,7 @@ function DataInput(props: FileNodeProps) {
           if (!file) return;
 
           // Configure the next state
-          const nextState = new FileNodeData(props);
+          const nextState = new FileNodeData(props.data);
           nextState.clearFile();
 
           await nextState.loadFile(file)
@@ -111,3 +132,5 @@ function DataInput(props: FileNodeProps) {
     </div>
   )
 }
+
+function ChangeFileMenuItem() {}

@@ -16,10 +16,10 @@ import { Node, useReactFlow } from "@xyflow/react";
 import { MessageSquareText, SendHorizonal } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ChatNodeData } from "../../lib/models/chat-node.data";
+import { MarkdownDisplay } from "../markdown";
 import { GrabHandleVertical } from "../mouse-targets/grab-handles";
+import { Small } from "../small";
 import { SimpleNode } from "./base.node";
 
 type LLMNodeProps = Node<ChatNodeData, "llm-prompt">;
@@ -128,7 +128,7 @@ function AssistantResponse({ message, loading }: BaseProps<{ message?: string, l
       <h4 className="nodrag font-bold">Assistant:</h4>
 
       <div className="nodrag prose orderList unorderList list select-text">
-        <Markdown remarkPlugins={[remarkGfm]}>{message}</Markdown>
+        <MarkdownDisplay>{message}</MarkdownDisplay>
       </div>
     </Fragment>
   );
@@ -153,7 +153,7 @@ function Header(props: LLMNodeProps) {
       <label htmlFor="text" className="font-bold text-lg nodrag flex items-center gap-2">
         <MessageSquareText />
         <span>Chat Message</span>
-        <span className="text-sm opacity-50">({props.data.model})</span>
+        <Small>({props.data.model})</Small>
       </label>
       <div className="flex w-fit justify-end gap-4">
         <GrabHandleVertical className="drag-handle__custom" />
@@ -248,7 +248,7 @@ function UserMessage({ locked, message, onSubmit, onChange }: { locked: boolean;
 
   return (
     <div className="nodrag prose orderList unorderList list select-text">
-      <Markdown>{message}</Markdown>
+      <MarkdownDisplay>{message}</MarkdownDisplay>
     </div>
   )
 }
