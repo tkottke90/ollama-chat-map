@@ -25,11 +25,10 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Save state management with auto-save
+  // Save state management
   const { markUnsaved, stateEvents, save } = useSaveState(
     getNodes,
-    getEdges,
-    3000 // 3 second auto-save delay
+    getEdges
   );
 
   const updateNodes = useDebounce(500, () => {
