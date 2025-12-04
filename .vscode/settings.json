@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
-    "Renderable"
+    "Renderable",
+    "Resizeable"
   ],
   "editor.codeActionsOnSave": {
     "source.organizeImports": "always"

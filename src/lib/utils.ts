@@ -3,6 +3,20 @@ import { createContext } from "preact";
 import { Inputs, useCallback, useContext } from "preact/hooks";
 import { twMerge } from "tailwind-merge";
 
+// Get the appropriate event map based on the target type
+type EventMapFor<T extends EventTarget> =
+  T extends Window ? WindowEventMap :
+  T extends Document ? DocumentEventMap :
+  T extends HTMLElement ? HTMLElementEventMap :
+  T extends SVGElement ? SVGElementEventMap :
+  Record<string, Event>;
+
+type EventEntry<
+  TTarget extends EventTarget,
+  TMap = EventMapFor<TTarget>
+> = {
+  [K in keyof TMap]: [K, (event: TMap[K]) => void]
+}[keyof TMap];
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -41,15 +55,15 @@ export function registerEvent(
   };
 }
 
-export function registerEventList(
-  target: EventTarget,
-  events: [string, (e: Event) => void][],
+export function registerEventList<TTarget extends EventTarget>(
+  target: TTarget,
+  events: EventEntry<TTarget>[],
   abort?: AbortController
 ) {
   const abortCtrl = abort ?? new AbortController();
 
   for (const [name, fn] of events) {
-    target.addEventListener(name, fn, { signal: abortCtrl.signal });
+    target.addEventListener(name as string, fn as EventListener, { signal: abortCtrl.signal });
   }
 
   return () => {
