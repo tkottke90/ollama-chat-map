@@ -2,6 +2,7 @@ import NodeRegistry from "@/lib/node-registry";
 import { BaseProps } from "@/lib/utility-types";
 import {
   Background,
+  ConnectionLineType,
   Edge,
   FitViewOptions,
   Node,
@@ -12,6 +13,7 @@ import '@xyflow/react/dist/base.css';
 import { ActionsToolbar } from "./action-toolbar";
 import { useMindMapState } from "./state";
 import ViewportLogger from "./toolbar/viewport-controls";
+import { ZenModeDrawer } from "./zen-mode";
 
 type MindMapProps = BaseProps
 
@@ -44,10 +46,12 @@ function ReactFlowCanvas() {
         onConnect={onConnect}
         onDelete={onDelete}
         isValidConnection={isValidConnection}
+        connectionLineType={ConnectionLineType.SmoothStep}
       >
         <Background />
         <ActionsToolbar />
         <ViewportLogger />
+        <ZenModeDrawer />
       </ReactFlow>
     </StateContext>
   )

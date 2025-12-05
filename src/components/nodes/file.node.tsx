@@ -3,8 +3,9 @@ import { FileNodeData } from "@/lib/models/file-node.data";
 import { AccordionItem } from "@radix-ui/react-accordion";
 import { open } from '@tauri-apps/plugin-dialog';
 import { Node, useReactFlow } from "@xyflow/react";
-import { useMemo, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
+import { FileDisplay } from "../file-display";
 import { MarkdownDisplay } from "../markdown";
 import { Small } from "../small";
 import { Accordion, AccordionContent, AccordionTrigger } from "../ui/accordion";
@@ -33,7 +34,7 @@ export function fileNodeFactory(input: NodeDefinitionInput<FileNodeData>): FileN
 
 export function FileNode(props: FileNodeProps) {
   const { updateNodeData } = useReactFlow();
-
+  
   return (
     <SimpleNode
       nodeProps={props}
@@ -78,7 +79,6 @@ function Header(props: FileNodeProps) {
 
 function DataInput(props: FileNodeProps) {
   const [ error, setError ] = useState('');
-  const inputId = useMemo(() => { return props.id + '-file' }, [props])
 
   const { updateNodeData } = useReactFlow();
 
@@ -88,7 +88,9 @@ function DataInput(props: FileNodeProps) {
         <hr />
         <Accordion type="single" collapsible className="w-full nodrag">
           <AccordionItem value="markdown-content" className="group">
-            <AccordionTrigger className="w-full flex justify-between text-zinc-800">{props.data.file.split(/[\\\/]/).at(-1)}</AccordionTrigger>
+            <AccordionTrigger className="w-full flex justify-between text-zinc-800">
+              <FileDisplay file={new File([props.data.content], props.data.file, { type: 'text/plain' })} />
+            </AccordionTrigger>
             <AccordionContent className="overflow-x-auto">
               <MarkdownDisplay>{props.data.content}</MarkdownDisplay>
             </AccordionContent>
