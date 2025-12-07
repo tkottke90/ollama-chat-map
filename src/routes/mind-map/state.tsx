@@ -2,6 +2,7 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useSaveState } from "@/lib/hooks/useSaveState";
 import * as MindMapService from '@/lib/mindMap.service';
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
+import { calculateNextNodePos, clearSelections } from "@/lib/react-flow.utils";
 import { MindMap } from "@/lib/types/mind-map";
 import { BaseProps, Nullable } from "@/lib/utility-types";
 import { createContextWithHook } from "@/lib/utils";
@@ -11,11 +12,12 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import { toast } from "sonner";
 
 export type AddNodeFn = (input: NodeDefinitionInput<any>) => Node;
-export type AddNodeFactory = (factory: AddNodeFn) => void;
+export type AddNodeFactory = (factory: AddNodeFn | Node) => void;
 
 const { useHook, Provider } = createContextWithHook<{
   stateEvents: EventTarget;
   mindMap: Nullable<MindMap>;
+  unselectAll: () => void;
   updateMindMap: (callback: (prev: MindMap) => MindMap) => void;
   onAddNode: AddNodeFactory;
   onSave: () => Promise<void>;
@@ -31,6 +33,10 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
     getNodes,
     getEdges
   );
+
+  const unselectAll = useCallback(() => {
+    setNodes(clearSelections(getNodes()));
+  }, [getNodes]);
 
   const updateNodes = useDebounce(500, () => {
     return invoke("update_nodes", { nodes: getNodes() }).then(() => markUnsaved());
@@ -73,6 +79,9 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
     });
   }, []);
 
+  /**
+   * Callback for when a node is deleted
+   */
   const onDelete = useCallback((params: Parameters<OnDelete>[0]) => {
     // For edges, filter out the edges that were removed
     setEdges((prev) => {
@@ -92,57 +101,40 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
   /**
    * Callback for when nodes are added
    */
-  const onAddNode = useCallback((nodeFactory: AddNodeFn) => {
-    // Create a default position
-    const nextPos = { x: 0, y: 0};
-
-    // Check for nodes that are selected.  This is used for positioning
-    // and auto-generating edges
-    const selected = getNodes().filter(node => node.selected);
-
-    if (selected.length > 0) { // If there are selected nodes
-      // Get the max bottom position from all selected elements
-      // by calculating it's y position plus it's height.  This gives
-      // us the bottom of the node so we do not overlap with other nodes
-      const maxY = Math.max(
-        ...selected.map(node => node.position.y + (node.measured?.height ?? 0))
-      );
-
-      nextPos.y = maxY + 50;
-
-      // Get the median x position of each node by calculating
-      // its current X position plus 1/2 of its width.  This gives
-      // us the middle of node in the X Direction
-      const xPositions = selected.map(node => node.position.x)
-
-      // Calculate the median X position
-      const medianXPos = xPositions.reduce((acc, val) => acc + val, 0) / xPositions.length;
-
-      nextPos.x = medianXPos;
-    } else { // Else add it to the middle of the current viewport
-      // Get the window dimensions
-      const clientRect = document.body.getBoundingClientRect()
-
-      // Convert screen center to flow coordinates
-      const centerPos = screenToFlowPosition({
-        x: clientRect.width / 2,
-        y: clientRect.height / 2
-      });
-      nextPos.x = centerPos.x;
-      nextPos.y = centerPos.y;
-    }
+  const onAddNode = useCallback((nodeOrNodeFactory: AddNodeFn | Node) => {
+    const nodes = getNodes();
+    
+    // Calculate where the node should go on the canvas
+    const nextPos = calculateNextNodePos(nodes, screenToFlowPosition);
 
     // Create new node
-    const newNode = nodeFactory({ showDebug: false, position: nextPos });
+    let newNode;
+
+    if (typeof nodeOrNodeFactory === 'function') {
+      // When we are provided a node factory function
+      // we trigger that factory
+      newNode = nodeOrNodeFactory({ showDebug: false, position: nextPos });
+    } else {
+      // Otherwise we can simply manage the node
+      newNode = nodeOrNodeFactory;
+
+      // Update the position based on our selection and
+      // viewport calculations
+      newNode.position.x = nextPos.x;
+      newNode.position.y = nextPos.y;
+    }
 
     // Create edges
-    const newEdges: Edge[] = selected
+    const newEdges: Edge[] = nodes
+      .filter(node => node.selected)
+      .filter(node => node.id !== newNode.id)
       .map((node) => ({
         id: crypto.randomUUID(),
         source: node.id,
         target: newNode.id,
       }));
 
+    console.log('Creating new node')
     setNodes((prev) => prev.concat(newNode));
     setEdges((prev) => prev.concat(...newEdges));
   }, []);
@@ -183,7 +175,6 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
    * Context for the mind map state
    */
   const StateContext = useCallback((props: BaseProps) => {
-
 
     const [mindMap, setMindMap] = useState<Nullable<MindMap>>({
       id: 1,
@@ -230,6 +221,7 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
                 }
               : null,
           stateEvents,
+          unselectAll,
           onAddNode,
           onSave: save,
           updateMindMap:  MindMapService.onUpdateMindMap(({ clone, update }) => {

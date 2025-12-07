@@ -1,4 +1,5 @@
 import { BaseProps } from "@/lib/utility-types";
+import { cn } from "@/lib/utils";
 import { useMemo } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import { getFileIcon } from "./icons";
@@ -15,7 +16,7 @@ function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-export function FileDisplay({ file }: BaseProps<{ file?: File }>) {
+export function FileDisplay({ file, className }: BaseProps<{ file?: File }>) {
 
   if (!file) return null;
 
@@ -23,7 +24,7 @@ export function FileDisplay({ file }: BaseProps<{ file?: File }>) {
 
   return (
     <Fragment>
-      <div className="grid grid-rows-2 font-bold">
+      <div className={cn("grid grid-rows-2 font-bold", className)}>
         <div className="flex gap-2 items-start">
           <FileIcon size={32} />
           <span className="text-lg">{file?.name?.split('/').at(-1)}</span>

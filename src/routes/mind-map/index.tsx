@@ -62,6 +62,7 @@ export function MindMap({}: MindMapProps) {
   return (
     <div
       className="h-full w-full"
+      id="canvas-container"
     >
       <ReactFlowProvider>
         <ReactFlowCanvas />
