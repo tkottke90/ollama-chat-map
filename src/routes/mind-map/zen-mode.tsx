@@ -181,6 +181,10 @@ const ChatMessages = forwardRef(({ nodes, children, className = "" }: ChatMessag
             return <TextMessage key={node.id} message={node.data.content} />;
           }
 
+          case "summary-node": {
+            return <TextMessage key={node.id} message={node.data.content} />;
+          }
+
           default: {
             return null;
           }
