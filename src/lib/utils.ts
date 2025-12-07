@@ -39,6 +39,18 @@ export function createContextWithHook<TContextProps>() {
   }
 }
 
+export function getElemDimensionsBySelector(selector: string) {
+  const elem = document.querySelector(selector);
+
+  if (!elem) {
+    return { width: 0, height: 0 }
+  }
+
+  const { width, height } = elem.getBoundingClientRect();
+
+  return { width, height }
+}
+
 export function registerEvent(
   element: HTMLElement,
   eventName: string,
