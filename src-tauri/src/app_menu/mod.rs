@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::app_menu::events::{on_debug_viewport, on_new, on_open, on_save, on_settings};
+use crate::app_menu::events::{on_debug_viewport, on_new, on_open, on_save, on_settings, on_zen_mode};
 use crate::ollama::{OllamaConfig, OllamaStatus};
 use tauri::menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder, CheckMenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
@@ -111,8 +111,11 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .checked(false)
     .build(app)?;
 
+  let show_zen_mode = MenuItem::with_id(app, "zenMode", "Show Zen Mode", true, Some("CmdOrCtrl+T"))?;
+
   let window_menu = SubmenuBuilder::new(app, "Window")
     .item(&show_debug_viewport)
+    .item(&show_zen_mode)
     .separator()
     .item(&PredefinedMenuItem::fullscreen(app, Some("Fullscreen"))?)
     .build()?;
@@ -128,6 +131,9 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     match event.id().0.as_str() {
       "debugViewport" => {
         on_debug_viewport(app_handle, window_menu.clone());
+      }
+      "zenMode" => {
+        on_zen_mode(app_handle);
       }
       "new" => {
         on_new(app_handle);

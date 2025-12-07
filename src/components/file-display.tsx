@@ -15,7 +15,9 @@ function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-export function FileDisplay({ file }: BaseProps<{ file: File }>) {
+export function FileDisplay({ file }: BaseProps<{ file?: File }>) {
+
+  if (!file) return null;
 
   const FileIcon = useMemo(() => getFileIcon(file.type), [file]);
 
@@ -24,7 +26,7 @@ export function FileDisplay({ file }: BaseProps<{ file: File }>) {
       <div className="grid grid-rows-2 font-bold">
         <div className="flex gap-2 items-start">
           <FileIcon size={32} />
-          <span className="text-lg">{file.name.split('/').at(-1)}</span>
+          <span className="text-lg">{file?.name?.split('/').at(-1)}</span>
         </div>
         <div className="flex items-center text-sm">
           <span>{formatBytes(file.size)}</span>

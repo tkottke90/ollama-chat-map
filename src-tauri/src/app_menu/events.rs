@@ -105,3 +105,9 @@ pub (crate) fn on_settings<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) 
     }
   }
 }
+
+pub (crate) fn on_zen_mode<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
+  println!("🧘 Zen mode menu item clicked");
+
+  let _ = app_handle.emit("zen_mode_trigger", true);
+}

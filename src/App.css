@@ -206,6 +206,11 @@
       @apply outline-2 outline-blue-700;
     }
   }
+
+  .zen-markdown {
+    --tw-prose-foreground: hsl(0, 0%, 100%);
+    --tw-prose-headings: hsl(0, 0%, 100%);
+  }
 }
 
 @layer base {

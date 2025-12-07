@@ -1,14 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
-import { File, LucideIcon } from "lucide-preact";
+import { FileIcon, LucideIcon } from "lucide-preact";
 import { BaseChatNodeData } from "./base-node.data";
+
+type FileResponse = {
+  content: string;
+  mime_type: string;
+}
 
 export class FileNodeData extends BaseChatNodeData {
 
   label = 'File Node'
-  icon: LucideIcon = File;
+  icon: LucideIcon = FileIcon;
 
   locked: boolean = false;
   file?: string;
+  mimeType?: string;
 
   constructor(data?: Partial<FileNodeData>) {
     super();
@@ -17,15 +23,23 @@ export class FileNodeData extends BaseChatNodeData {
 
   async clearFile() {
     this.file = undefined;
+    this.mimeType = undefined;
     this.content = '';
     this.locked = false;
   }
 
   async loadFile(filename: string) {
-    const data = await invoke<string>('load_txt_file', { filename })
+    const { content, mime_type } = await invoke<FileResponse>('load_txt_file', { filename })
 
     this.file = filename;
-    this.content = data;
+    this.mimeType = mime_type;
+    this.content = content;
     this.locked = true;
+  }
+
+  toFile() {
+    if (!this.file) return;
+
+    return new File([this.content], this.file, { type: this.mimeType })
   }
 }

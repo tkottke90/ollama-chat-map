@@ -127,9 +127,7 @@ function AssistantResponse({ message, loading }: BaseProps<{ message?: string, l
       <hr />
       <h4 className="nodrag font-bold">Assistant:</h4>
 
-      <div className="nodrag prose orderList unorderList list select-text">
-        <MarkdownDisplay>{message}</MarkdownDisplay>
-      </div>
+      <MarkdownDisplay>{message}</MarkdownDisplay>
     </Fragment>
   );
 }
@@ -247,8 +245,6 @@ function UserMessage({ locked, message, onSubmit, onChange }: { locked: boolean;
   }
 
   return (
-    <div className="nodrag prose orderList unorderList list select-text">
-      <MarkdownDisplay>{message}</MarkdownDisplay>
-    </div>
+    <MarkdownDisplay>{message}</MarkdownDisplay>
   )
 }

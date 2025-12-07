@@ -82,14 +82,14 @@ function DataInput(props: FileNodeProps) {
 
   const { updateNodeData } = useReactFlow();
 
-  if (props.data.file) {
+  if (props.data.content) {
     return (
       <Fragment>
         <hr />
         <Accordion type="single" collapsible className="w-full nodrag">
           <AccordionItem value="markdown-content" className="group">
             <AccordionTrigger className="w-full flex justify-between text-zinc-800">
-              <FileDisplay file={new File([props.data.content], props.data.file, { type: 'text/plain' })} />
+              <FileDisplay file={props.data.toFile()} />
             </AccordionTrigger>
             <AccordionContent className="overflow-x-auto">
               <MarkdownDisplay>{props.data.content}</MarkdownDisplay>

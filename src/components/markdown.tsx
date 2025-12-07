@@ -1,4 +1,5 @@
 import { BaseProps } from "@/lib/utility-types";
+import { cn } from "@/lib/utils";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -6,6 +7,8 @@ import remarkGfm from "remark-gfm";
 export function MarkdownDisplay(props: BaseProps<{ children: string }>) {
 
   return (
-    <Markdown remarkPlugins={[remarkGfm]}>{props.children}</Markdown>
+    <div className={cn("prose orderList unorderList list select-text", props.className)}>
+      <Markdown remarkPlugins={[remarkGfm]}>{props.children}</Markdown>
+    </div>
   )
 }
