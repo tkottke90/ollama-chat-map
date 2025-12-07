@@ -22,7 +22,7 @@ const { useHook, Provider } = createContextWithHook<{
 }>();
 
 export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] = []) {
-  const { getNodes, getEdges, toObject, getViewport } = useReactFlow();
+  const { getNodes, getEdges, toObject, screenToFlowPosition } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -100,7 +100,7 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
     // and auto-generating edges
     const selected = getNodes().filter(node => node.selected);
 
-    if (selected) { // If there are selected nodes
+    if (selected.length > 0) { // If there are selected nodes
       // Get the max bottom position from all selected elements
       // by calculating it's y position plus it's height.  This gives
       // us the bottom of the node so we do not overlap with other nodes
@@ -122,11 +122,14 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
     } else { // Else add it to the middle of the current viewport
       // Get the window dimensions
       const clientRect = document.body.getBoundingClientRect()
-      
-      // Add to the middle of the current viewport
-      const viewPort = getViewport();
-      nextPos.x = viewPort.x + clientRect.width / 2;
-      nextPos.y = viewPort.y + clientRect.height / 2;
+
+      // Convert screen center to flow coordinates
+      const centerPos = screenToFlowPosition({
+        x: clientRect.width / 2,
+        y: clientRect.height / 2
+      });
+      nextPos.x = centerPos.x;
+      nextPos.y = centerPos.y;
     }
 
     // Create new node
