@@ -1,6 +1,6 @@
 import { useTauriListener } from "@/lib/hooks/useTauriListener";
 import { Panel, ViewportHelperFunctionOptions, useReactFlow } from "@xyflow/react";
-import { Fullscreen, ZoomInIcon, ZoomOutIcon } from "lucide-preact";
+import { Fullscreen, MonitorDot, ZoomInIcon, ZoomOutIcon } from "lucide-preact";
 import { useEffect, useState } from "preact/hooks";
 import { iconStyle } from "./toolbar-constants";
 import { ToolbarButton } from "./toolbar-utils";
@@ -15,7 +15,7 @@ export function ZoomIn() {
   const { zoomIn } = useReactFlow();
 
   return (
-    <ToolbarButton onClick={() => zoomIn(zoomAnimations)}>
+    <ToolbarButton title="Zoom In" onClick={() => zoomIn(zoomAnimations)}>
       <ZoomInIcon className={iconStyle} />
     </ToolbarButton>
   )
@@ -25,7 +25,7 @@ export function ZoomOut() {
   const { zoomOut } = useReactFlow();
 
   return (
-    <ToolbarButton className="relative" onClick={() => zoomOut(zoomAnimations)}>
+    <ToolbarButton title="Zoom Out" className="relative" onClick={() => zoomOut(zoomAnimations)}>
       <ZoomOutIcon className={iconStyle} />
     </ToolbarButton>
   )
@@ -35,8 +35,18 @@ export function ZoomToFit() {
   const { fitView } = useReactFlow();
 
   return (
-    <ToolbarButton className="relative" onClick={() => fitView({ padding: 0.2, ...zoomAnimations })}>
+    <ToolbarButton title="Zoom to Fit" className="relative" onClick={() => fitView({ padding: 0.2, ...zoomAnimations })}>
       <Fullscreen className={iconStyle} />
+    </ToolbarButton>
+  )
+}
+
+export function ResetViewport() {
+  const { setViewport } = useReactFlow();
+
+  return (
+    <ToolbarButton title="Reset Viewport" className="relative" onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })}>
+      <MonitorDot className={iconStyle} />
     </ToolbarButton>
   )
 }
