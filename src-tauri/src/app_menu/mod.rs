@@ -103,8 +103,10 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
 
 
   let edit_menu = SubmenuBuilder::new(app, "Edit")
-    .item(&PredefinedMenuItem::copy(app, Some("Copy"))?)
-    .item(&PredefinedMenuItem::paste(app, Some("Paste"))?)
+    .cut()
+    .copy()
+    .paste()
+    .select_all()
     .build()?;
   
   let show_debug_viewport = CheckMenuItemBuilder::with_id("debugViewport", "Show Viewport Position")
@@ -120,14 +122,6 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .item(&PredefinedMenuItem::fullscreen(app, Some("Fullscreen"))?)
     .build()?;
 
-
-  let window_menu = SubmenuBuilder::new(app, "Window")
-    .cut()
-    .copy()
-    .paste()
-    .select_all()
-    .separator()
-    .build()?;
 
   let menu = MenuBuilder::new(handle)
     .items(&[&default_menu, &edit_menu, &window_menu])

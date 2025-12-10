@@ -4,7 +4,7 @@ import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { SummaryNodeData } from "@/lib/models/summary-node.data";
 import { Node, useReactFlow } from "@xyflow/react";
 import { Loader2, Sparkles } from "lucide-preact";
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import { toast } from "sonner";
 import { ContextMenuItem } from "../ui/context-menu";
@@ -119,20 +119,36 @@ function Header(props: SummaryNodeProps) {
 
 function DataInput(props: SummaryNodeProps) {
   const { updateNodeData } = useReactFlow();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize function
+  const autoResize = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  };
+
+  // Call autoResize when content changes (after generation)
+  useEffect(() => {
+    autoResize();
+  }, [props.data.content]);
 
   return (
     <div className="flex gap-2 nodrag">
        <textarea
+          ref={textareaRef}
           id={props.id + '-content'}
           name="summary"
           defaultValue={props.data.content}
-          className="nodrag noscroll nowheel w-full rounded-md grow"
+          className="nodrag noscroll nowheel w-full rounded-md grow overflow-hidden min-h-32"
           placeholder="Enter summary or click the sparkle button to auto-generate..."
           onChange={ChangeHandler((value) => {
             const nextState = new SummaryNodeData(props.data);
             nextState.content = value;
 
             updateNodeData(props.id, nextState, { replace: true });
+            autoResize();
           })}
         />
     </div>
