@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Resizeable, ResizeableContent } from "@/components/ui/resize-container";
 import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { categorizeParent, NodeWithThread, selectNodeAndParents } from "@/lib/chat-parsing";
+import { categorizeParent, createChatHistory, NodeWithThread, selectNodeAndParents } from "@/lib/chat-parsing";
 import { EnterHandler } from "@/lib/events/keyboard";
 import { useTauriEvent } from "@/lib/hooks/useTauriListener";
 import { BaseChatNodeData } from "@/lib/models/base-node.data";
+import { ChatNodeData } from "@/lib/models/chat-node.data";
 import { BaseProps } from "@/lib/utility-types";
 import { cn } from "@/lib/utils";
+import { invoke } from "@tauri-apps/api/core";
 import { Node, useReactFlow } from "@xyflow/react";
 import { FilePlus, NotebookText, SendHorizonal } from "lucide-preact";
 import { forwardRef, Ref } from "preact/compat";
@@ -21,12 +23,13 @@ import { useMindMapStateContext } from "./state";
 const ICON_SIZE = 32;
 
 export function ZenModeDrawer() {
-  const { getNodes, getEdges, updateNode } = useReactFlow();
+  const { getNodes, getEdges, updateNode, updateNodeData } = useReactFlow();
   const { onAddNode, unselectAll } = useMindMapStateContext();
   const scrollableContainer = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [chatNodes, setChatNodes] = useState<NodeWithThread[]>([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
 
   useTauriEvent<any>("zen_mode_trigger", () => {
@@ -75,11 +78,63 @@ export function ZenModeDrawer() {
             <form
               action=""
               className="h-full flex gap-4 px-4"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
 
-                console.log("Submitting message:", message);
+                if (!message || loading) return;
+
+                // Create a new LlmPromptNode with the user's message
+                const newNode = Nodes.llmPromptNodeFactory({
+                  selected: true,
+                  data: { content: message }
+                });
+
+                // Add the node to the mind map
+                onAddNode(newNode);
+
+                // Update local chat state with the new node
+                setChatNodes(chatNodes.concat(newNode));
+
+                // Clear the message input
                 setMessage("");
+
+                try {
+                  // Set loading state
+                  setLoading(true);
+
+                  // Create the ChatNodeData instance and lock the user message
+                  const chatNodeData = new ChatNodeData(newNode.data);
+                  const nextState = chatNodeData.addUserMessage(message);
+
+                  // Update the node with locked state
+                  updateNodeData(newNode.id, nextState, { replace: true });
+
+                  // Build chat history from the node's parents
+                  const chatHistory = createChatHistory(newNode, nextState.toChatArray(), getNodes(), getEdges());
+
+                  // Call Ollama to generate AI response
+                  const response = await invoke<{ role: string; content: string }>("ollama_chat", {
+                    model: newNode.data.model,
+                    messages: chatHistory,
+                  });
+
+                  // Update the node with the AI response
+                  updateNodeData(newNode.id, nextState.addAIMessage(response), { replace: true });
+
+                  // Update local chat state to reflect the AI response
+                  setChatNodes(prev => prev.map(node =>
+                    node.id === newNode.id
+                      ? { ...node, data: nextState.addAIMessage(response) }
+                      : node
+                  ));
+                } catch (error) {
+                  console.error("AI error:", error);
+                  // Unlock the node on error
+                  const chatNodeData = new ChatNodeData(newNode.data);
+                  updateNodeData(newNode.id, chatNodeData.editUserMessage(), { replace: true });
+                } finally {
+                  setLoading(false);
+                }
               }}
               onKeyDown={EnterHandler((e) => {
                 // Skips writing a new line character
@@ -89,9 +144,14 @@ export function ZenModeDrawer() {
                 e.currentTarget.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
               })}
             >
-              <Textarea className="h-full resize-none" value={message} onChange={(e) => setMessage(e.currentTarget.value)} />
+              <Textarea
+                className="h-full resize-none"
+                value={message}
+                onChange={(e) => setMessage(e.currentTarget.value)}
+                disabled={loading}
+              />
               <div className="flex flex-col gap-2">
-                <Button type="submit" variant="action" title="Send" disabled={!message}>
+                <Button type="submit" variant="action" title="Send" disabled={!message || loading}>
                   <SendHorizonal size={ICON_SIZE} />
                 </Button>
                 <Button type="button" variant="action" title="Add Text" disabled={!message} onClick={() => {
@@ -130,12 +190,14 @@ const ChatMessages = forwardRef(({ nodes, children, className = "" }: ChatMessag
   const child = nodes.length > 0 ? nodes.at(-1) : undefined;
 
   return (
-    <div ref={ref} className={cn("select-none h-full overflow-y-auto px-4 flex flex-col gap-4 text-foreground", className)}>
-      {parents.map((node) => {
-        return <ChatMessage key={node.id} node={node} />
-      })}
-      
-      {child && <ChatMessage key={child.id} node={child} />}
+    <div ref={ref} className={cn("select-none h-full overflow-y-auto px-4 text-foreground", className)}>
+      <div className="flex flex-col gap-4 max-w-[1500px] mx-auto">
+        {parents.map((node) => {
+          return <ChatMessage key={node.id} node={node} />
+        })}
+
+        {child && <ChatMessage key={child.id} node={child} />}
+      </div>
     </div>
   );
 });
@@ -171,9 +233,9 @@ function ChatMessage({ node }: BaseProps<{node: Node<BaseChatNodeData, string>}>
 }
 
 function Thread({ children }: BaseProps) {
-  
+
   return (
-    <div className="overflow-x-hidden relative">
+    <div className="relative">
       <MessageBody className="ml-auto translate-8 h-8 absolute" />
       <MessageBody className="ml-auto translate-4 h-8 absolute"/>
 

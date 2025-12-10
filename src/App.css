@@ -155,6 +155,10 @@
   ul {
     @apply list-disc;
   }
+
+  code {
+    white-space: break-spaces;
+  }
 }
 
 @layer components {

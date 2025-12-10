@@ -47,7 +47,7 @@ export class FileNodeData extends BaseChatNodeData {
 
   toChatView() {
     return (
-      <UserInputMessage>
+      <UserInputMessage className="">
         <FileDisplay file={this.toFile()} className="text-white" />
       </UserInputMessage>
     )

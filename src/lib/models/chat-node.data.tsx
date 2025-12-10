@@ -98,9 +98,11 @@ export class ChatNodeData extends BaseChatNodeData {
           <MarkdownDisplay className="prose-invert">{this.content}</MarkdownDisplay>
         </UserInputMessage>
 
-        <Message>
-          <MarkdownDisplay className="prose-invert">{this.aiResponse?.content ?? ''}</MarkdownDisplay>
-        </Message>
+        {this.aiResponse && 
+          <Message className="max-w-full">
+            <MarkdownDisplay className="prose-invert max-w-[200ch]">{this.aiResponse?.content ?? ''}</MarkdownDisplay>
+          </Message>
+        }
       </Fragment>
     )
   }
