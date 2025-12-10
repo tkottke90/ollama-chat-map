@@ -3,8 +3,11 @@ import { ChangeHandler } from "@/lib/events/input";
 import { NodeDefinitionInput } from "@/lib/models/base-node.data";
 import { SummaryNodeData } from "@/lib/models/summary-node.data";
 import { Node, useReactFlow } from "@xyflow/react";
-import { Sparkles } from "lucide-preact";
+import { Loader2, Sparkles } from "lucide-preact";
+import { useState } from "preact/hooks";
+import { Fragment } from "preact/jsx-runtime";
 import { toast } from "sonner";
+import { ContextMenuItem } from "../ui/context-menu";
 import { SimpleNode } from "./base.node";
 
 type SummaryNodeProps = Node<SummaryNodeData, "summary-node">;
@@ -31,6 +34,7 @@ export function SummaryNode(props: SummaryNodeProps) {
   return (
     <SimpleNode
       nodeProps={props}
+      customMenuItems={SummaryMenuItems}
       onToggle={(key) => {
         switch(key) {
           case 'showDebug': {
@@ -52,34 +56,62 @@ export function SummaryNode(props: SummaryNodeProps) {
 }
 
 function Header(props: SummaryNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, getNodes, getEdges } = useReactFlow();
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleAutoGenerate = () => {
-    // Placeholder for Ollama integration
-    toast.info('Auto-generate summary feature coming soon!');
-    
-    // TODO: Implement Ollama integration to generate summary
-    // This will involve:
-    // 1. Collecting parent node content
-    // 2. Sending to Ollama with a summarization prompt
-    // 3. Updating the node content with the generated summary
+  const handleAutoGenerate = async () => {
+    try {
+      setIsGenerating(true);
+
+      // Create a new instance to call generateSummary
+      const summaryData = new SummaryNodeData(props.data);
+
+      // Generate the summary
+      const generatedSummary = await summaryData.generateSummary(
+        props,
+        getNodes(),
+        getEdges()
+      );
+
+      if (generatedSummary === null) {
+        toast.warning('No parent threads found to summarize. Connect some conversation nodes to this Summary Node first.');
+        return;
+      }
+
+      // Update the node with the generated summary
+      const updatedData = new SummaryNodeData(props.data);
+      updatedData.content = generatedSummary;
+      updateNodeData(props.id, updatedData, { replace: true });
+
+      toast.success('Summary generated successfully!');
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      toast.error(`Failed to generate summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <div className="flex justify-between items-center">
       <label htmlFor="summary" className="font-bold text-lg flex items-center gap-2">
-        <props.data.icon /> 
+        <props.data.icon />
         <span>Summary</span>
       </label>
-      
-      <Button 
-        variant="outline" 
+
+      <Button
+        variant="action"
         size="icon-sm"
         onClick={handleAutoGenerate}
         title="Auto-generate summary"
         className="nodrag"
+        disabled={isGenerating}
       >
-        <Sparkles size={16} />
+        {isGenerating ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Sparkles size={16} />
+        )}
       </Button>
     </div>
   )
@@ -107,3 +139,22 @@ function DataInput(props: SummaryNodeProps) {
   )
 }
 
+function SummaryMenuItems(props: Node<SummaryNodeData, string>) {
+  const { updateNodeData } = useReactFlow();
+
+  return (
+    <Fragment>
+      <ContextMenuItem
+        variant="destructive"
+        onClick={() => {
+          const nextState = new SummaryNodeData(props.data);
+            nextState.content = '';
+
+            updateNodeData(props.id, nextState, { replace: true });
+        }}
+      >
+        Clear
+      </ContextMenuItem>
+    </Fragment>
+  )
+}

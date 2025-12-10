@@ -1,3 +1,4 @@
+import { useDebounce } from "@/lib/hooks/useDebounce"
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -6,7 +7,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-preact"
 import { useTheme } from "next-themes"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { Toaster as Sonner, toast, type ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
@@ -33,6 +34,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
       {...props}
     />
   )
+}
+
+export function useWarningToast(delay: number = 500) {
+
+  return useDebounce(delay, (message: Parameters<typeof toast['warning']>[0]) => {
+    toast.warning(
+      message,
+      { duration: 5000 }
+    );
+  })
 }
 
 export { Toaster }

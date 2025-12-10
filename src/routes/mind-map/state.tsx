@@ -1,3 +1,4 @@
+import { useWarningToast } from "@/components/ui/sonner";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useSaveState } from "@/lib/hooks/useSaveState";
 import * as MindMapService from '@/lib/mindMap.service';
@@ -7,7 +8,7 @@ import { MindMap } from "@/lib/types/mind-map";
 import { BaseProps, Nullable } from "@/lib/utility-types";
 import { createContextWithHook } from "@/lib/utils";
 import { invoke } from "@tauri-apps/api/core";
-import { addEdge, Connection, Edge, EdgeChange, getOutgoers, Node, NodeChange, OnDelete, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
+import { addEdge, Connection, Edge, EdgeChange, getIncomers, getOutgoers, Node, NodeChange, OnDelete, useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { toast } from "sonner";
 
@@ -33,6 +34,8 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
     getNodes,
     getEdges
   );
+
+  const triggerWarningToast = useWarningToast();
 
   const unselectAll = useCallback(() => {
     setNodes(clearSelections(getNodes()));
@@ -155,6 +158,18 @@ export function useMindMapState(initialNodes: Node[] = [], initialEdges: Edge[] 
       if (target.id === connection.source) {
         toast.warning('Nodes can not connect to themselves');
         return false;
+      }
+
+      // Only nodes with preventDepthTraversal (e.g., Summary Nodes) can have multiple parents
+      // This enforces a tree structure where regular nodes have single parents,
+      // and only Summary Nodes can act as merge points for multiple conversation threads
+      if (!target.data?.preventDepthTraversal) {
+        const existingParents = getIncomers(target, nodes, edges);
+
+        if (existingParents.length > 0) {
+          triggerWarningToast(<span>Only <strong>Summary Nodes</strong> can have multiple parents. Convert this node to a Summary Node to merge conversation threads.</span>);
+          return false;
+        }
       }
 
       // Loop over the downstream nodes from the current node

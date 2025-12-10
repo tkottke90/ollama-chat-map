@@ -1,3 +1,5 @@
+import { UserInputMessage } from "@/components/chats/user-input";
+import { FileDisplay } from "@/components/file-display";
 import { invoke } from "@tauri-apps/api/core";
 import { FileIcon, LucideIcon } from "lucide-preact";
 import { BaseChatNodeData } from "./base-node.data";
@@ -41,5 +43,13 @@ export class FileNodeData extends BaseChatNodeData {
     if (!this.file) return;
 
     return new File([this.content], this.file, { type: this.mimeType })
+  }
+
+  toChatView() {
+    return (
+      <UserInputMessage>
+        <FileDisplay file={this.toFile()} className="text-white" />
+      </UserInputMessage>
+    )
   }
 }

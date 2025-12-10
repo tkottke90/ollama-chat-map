@@ -2,6 +2,7 @@
 use ollama_rs::Ollama;
 use ollama_rs::generation::chat::ChatMessage as OllamaChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;
+use ollama_rs::generation::completion::request::GenerationRequest;
 
 use tauri::Manager;
 use serde::{Deserialize, Serialize};
@@ -133,6 +134,44 @@ pub async fn ollama_chat(
     role: "assistant".to_string(),
     content: response.message.content,
   })
+}
+
+/// Generate a completion using Ollama's generate API (non-chat mode)
+///
+/// This is useful for single-shot text generation without conversation history.
+/// Unlike chat mode, this doesn't maintain message history and is simpler for
+/// tasks like summarization, text generation, or one-off completions.
+#[tauri::command]
+pub async fn ollama_generate(
+  app: tauri::AppHandle,
+  model: String,
+  prompt: String
+) -> Result<String, String> {
+  println!("Ollama Generate Called");
+
+  // Check if Ollama is available first
+  let status = app.state::<AppState>().get_ollama_status();
+  if !status.is_available {
+    return Err("Ollama server is not available. Please check your connection settings.".to_string());
+  }
+
+  // Pull Ollama API Base URL from config
+  let ollama = {
+    let config = app.state::<AppState>().get_ollama_config();
+    Ollama::new(config.domain, config.port)
+  };
+
+  // Create generation request
+  let request = GenerationRequest::new(model, prompt);
+
+  // Make HTTP Request to Ollama
+  let response = ollama
+    .generate(request)
+    .await
+    .map_err(|e| format!("Ollama API error: {}", e))?;
+
+  // Return the generated text
+  Ok(response.response)
 }
 
 // ============================================================================

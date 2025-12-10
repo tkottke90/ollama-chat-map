@@ -45,6 +45,7 @@ pub fn run() {
             ollama::get_ollama_config,
             ollama::get_ollama_status,
             ollama::ollama_chat,
+            ollama::ollama_generate,
             ollama::set_ollama_config
         ])
         .run(tauri::generate_context!())

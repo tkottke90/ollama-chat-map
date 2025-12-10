@@ -121,6 +121,14 @@ fn configure_menus<R: tauri::Runtime>(app: &tauri::App<R>) -> tauri::Result<()> 
     .build()?;
 
 
+  let window_menu = SubmenuBuilder::new(app, "Window")
+    .cut()
+    .copy()
+    .paste()
+    .select_all()
+    .separator()
+    .build()?;
+
   let menu = MenuBuilder::new(handle)
     .items(&[&default_menu, &edit_menu, &window_menu])
     .build()?;

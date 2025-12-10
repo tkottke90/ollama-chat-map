@@ -1,4 +1,8 @@
+import { Message } from "@/components/chats/message";
+import { UserInputMessage } from "@/components/chats/user-input";
+import { MarkdownDisplay } from "@/components/markdown";
 import { MessageSquareText } from "lucide-preact";
+import { Fragment } from "preact/jsx-runtime";
 import { ChatMessage } from "../types/conversation";
 import { BaseChatNodeData } from "./base-node.data";
 
@@ -85,5 +89,19 @@ export class ChatNodeData extends BaseChatNodeData {
     return data instanceof ChatNodeData
       ? data
       : new ChatNodeData(data as Partial<ChatNodeData>);
+  }
+
+  toChatView() {
+    return (
+      <Fragment>
+        <UserInputMessage className="max-w-8/12">
+          <MarkdownDisplay className="prose-invert">{this.content}</MarkdownDisplay>
+        </UserInputMessage>
+
+        <Message>
+          <MarkdownDisplay className="prose-invert">{this.aiResponse?.content ?? ''}</MarkdownDisplay>
+        </Message>
+      </Fragment>
+    )
   }
 }

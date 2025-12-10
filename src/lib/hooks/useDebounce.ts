@@ -3,12 +3,12 @@ import { Nullable } from "../utility-types";
 
 type Timeout = ReturnType<typeof setTimeout>
 
-export function useDebounce(delay: number, callback: () => void | Promise<void>) {
+export function useDebounce<T>(delay: number, callback: (...args: T[]) => void | Promise<void>) {
   // Setup ref to track timeout
   const elemRef = useRef<Nullable<Timeout>>(null);
 
   // Return debounced version of the method
-  return useCallback(() => {
+  return useCallback((...args: T[]) => {
     
     // If the timeout already exists, then cancel it
     // so that the callback doesn't trigger
@@ -27,7 +27,7 @@ export function useDebounce(delay: number, callback: () => void | Promise<void>)
         // Request an animation frame so that 
         // the callback happens after the current 
         // render has resolved
-        requestAnimationFrame(() => callback())
+        requestAnimationFrame(() => callback(...args))
       ]).finally(() => {
         //Regardless of the result, clear the timeout
        if (elemRef.current) clearTimeout(elemRef.current)
