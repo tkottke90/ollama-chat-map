@@ -1,4 +1,5 @@
 import { MessageBody } from "@/components/chats/message";
+import { Loading } from "@/components/loading";
 import Nodes from "@/components/nodes";
 import { Button } from "@/components/ui/button";
 import { Resizeable, ResizeableContent } from "@/components/ui/resize-container";
@@ -62,6 +63,11 @@ export function ZenModeDrawer() {
     const lastNode = chatNodes.at(-1);
     updateNode(lastNode!.id, { selected: true });
 
+    // Scroll to bottom when chat nodes change
+    scrollableContainer.current?.scrollTo({
+      behavior: "smooth",
+      top: scrollableContainer.current?.scrollHeight,
+    });
   }, [chatNodes]);
 
   return (
@@ -72,6 +78,8 @@ export function ZenModeDrawer() {
         </SheetHeader>
 
         <ChatMessages nodes={chatNodes} ref={scrollableContainer} />
+
+        { loading && <Loading size={16} />}
 
         <Resizeable minHeight={150}>
           <ResizeableContent>
@@ -115,7 +123,7 @@ export function ZenModeDrawer() {
                   // Call Ollama to generate AI response
                   const response = await invoke<{ role: string; content: string }>("ollama_chat", {
                     model: newNode.data.model,
-                    messages: chatHistory,
+                    messages: chatHistory.reverse(),
                   });
 
                   // Update the node with the AI response

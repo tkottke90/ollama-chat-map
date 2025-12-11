@@ -17,6 +17,7 @@ import { MessageSquareText, SendHorizonal } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 import { ChatNodeData } from "../../lib/models/chat-node.data";
+import { Loading } from "../loading";
 import { MarkdownDisplay } from "../markdown";
 import { GrabHandleVertical } from "../mouse-targets/grab-handles";
 import { Small } from "../small";
@@ -115,7 +116,7 @@ function AssistantResponse({ message, loading }: BaseProps<{ message?: string, l
     return (
       <Fragment>
         <hr />
-        <p className="text-center animate-bounce mt-2">Loading</p>
+        <Loading size={16} />
       </Fragment>
     );
   }
