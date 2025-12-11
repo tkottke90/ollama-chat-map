@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v0.1.0, v1.0.0
+  workflow_dispatch:  # Allow manual triggering from GitHub UI
+
+jobs:
+  release-macos:
+    permissions:
+      contents: write  # Required to create releases and upload assets
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Build for both Apple Silicon and Intel Macs
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app (Apple Silicon)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'AI Mind Map v__VERSION__'
+          releaseBody: |
+            ## AI Mind Map v__VERSION__
+            
+            ### Download
+            Download the appropriate DMG file below for your Mac:
+            - **Apple Silicon (M1/M2/M3)**: `*_aarch64.dmg`
+            - **Intel Macs**: `*_x64.dmg`
+            
+            ### Installation
+            1. Download the DMG file
+            2. Open the DMG
+            3. Drag "AI Mind Map" to your Applications folder
+            4. **Important**: Right-click the app and select "Open" the first time (unsigned app)
+            
+            ### What's New
+            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          releaseDraft: true
+          prerelease: false
+          args: --target aarch64-apple-darwin
+
+      - name: Build Tauri app (Intel)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'AI Mind Map v__VERSION__'
+          releaseBody: ''  # Body already set in first build
+          releaseDraft: true
+          prerelease: false
+          args: --target x86_64-apple-darwin
+
