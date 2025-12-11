@@ -22,6 +22,11 @@ jobs:
           node-version: 'lts/*'
           cache: 'npm'
 
+      - name: Setup NPM Registry
+        run: |
+          npm set registry ${{ secrets.PRIVATE_NPM_REGISTRY }}
+          npm config set ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
+
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
