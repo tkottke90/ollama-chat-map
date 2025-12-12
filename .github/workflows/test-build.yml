@@ -20,7 +20,21 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
+          registry: ${{ secrets.PRIVATE_NPM_REGISTRY }}
 
+      - name: Install frontend dependencies
+        run: |
+          echo "  ENV  "
+          echo "======="
+          echo $ENV
+          echo
+          echo "  NPMRC  "
+          echo "========="
+          cat ~/.npmrc
+          npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }} 
+      
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -30,9 +44,6 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
-
-      - name: Install frontend dependencies
-        run: npm ci
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
