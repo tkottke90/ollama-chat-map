@@ -15,23 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-node-cicd
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
-          registry: ${{ secrets.PRIVATE_NPM_REGISTRY }}
+          registry-url: ${{ secrets.PRIVATE_NPM_REGISTRY }}
+          node-auth-token: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
 
-      - name: Install frontend dependencies
-        run: |
-          echo "  ENV  "
-          echo "======="
-          ENV
-          echo
-          npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }} 
-      
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
