@@ -21,11 +21,7 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
-
-      - name: Setup NPM Registry
-        run: |
-          npm set registry ${{ secrets.PRIVATE_NPM_REGISTRY }}
-          npm config set ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }}
+          registry: ${{ secrets.PRIVATE_NPM_REGISTRY }}
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -40,6 +36,8 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }} 
 
       - name: Build Tauri app (Apple Silicon)
         uses: tauri-apps/tauri-action@v0
