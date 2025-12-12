@@ -35,7 +35,15 @@ jobs:
           workspaces: './src-tauri -> target'
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: |
+          echo "  ENV  "
+          echo "======="
+          echo $ENV
+          echo
+          echo "  NPMRC  "
+          echo "========="
+          cat ~/.npmrc
+          npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_REGISTRY_TOKEN }} 
 
