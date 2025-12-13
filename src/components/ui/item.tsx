@@ -1,9 +1,9 @@
-import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
 
-import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
 
 function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -51,25 +51,39 @@ const itemVariants = cva(
   }
 )
 
-function Item({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"div"> &
-  VariantProps<typeof itemVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "div"
-  return (
-    <Comp
-      data-slot="item"
-      data-variant={variant}
-      data-size={size}
-      className={cn(itemVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+interface ItemProps
+  extends React.ComponentProps<"div">,
+    VariantProps<typeof itemVariants> {
+  asChild?: boolean
 }
+
+const Item = React.forwardRef<
+  HTMLDivElement,
+  ItemProps
+>(
+  (
+    {
+      className,
+      variant = "default",
+      size = "default",
+      asChild = false,
+      ...props
+    },
+    ref
+  ) => {
+    const Comp = asChild ? Slot : "div"
+    return (
+      <Comp
+        ref={ref as any}
+        data-slot="item"
+        data-variant={variant}
+        data-size={size}
+        className={cn(itemVariants({ variant, size, className }))}
+        {...props}
+      />
+    )
+  }
+)
 
 const itemMediaVariants = cva(
   "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none group-has-[[data-slot=item-description]]/item:translate-y-0.5",
@@ -180,14 +194,7 @@ function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 export {
-  Item,
-  ItemMedia,
-  ItemContent,
-  ItemActions,
-  ItemGroup,
-  ItemSeparator,
-  ItemTitle,
-  ItemDescription,
-  ItemHeader,
-  ItemFooter,
+  Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemGroup, ItemHeader, ItemMedia, ItemSeparator,
+  ItemTitle
 }
+

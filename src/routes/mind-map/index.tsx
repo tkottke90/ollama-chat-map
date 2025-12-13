@@ -39,7 +39,7 @@ function ReactFlowCanvas() {
         nodeTypes={NodeRegistry.toObject()}
         fitView
         fitViewOptions={fitViewOptions}
-        maxZoom={1.5}
+        maxZoom={1.5} 
         minZoom={0.1}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

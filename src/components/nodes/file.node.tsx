@@ -134,5 +134,3 @@ function DataInput(props: FileNodeProps) {
     </div>
   )
 }
-
-function ChangeFileMenuItem() {}
